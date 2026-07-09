@@ -1,0 +1,231 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// USERS & AUTH
+// ============================================================
+
+model User {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  telegramId  BigInt    @unique
+  firstName   String
+  lastName    String?
+  username    String?
+  photoUrl    String?
+  languageCode String?
+  
+  cart        CartItem[]
+  orders      Order[]
+  wishlist    Wishlist[]
+  recentlyViewed RecentlyViewed[]
+  addresses   Address[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Admin {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  email       String    @unique
+  password    String
+  name        String
+  role        String    @default("admin")
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// ============================================================
+// PRODUCTS & CATEGORIES
+// ============================================================
+
+model Category {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String    @unique
+  slug        String    @unique
+  image       String?
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  
+  products    Product[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Product {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  slug          String    @unique
+  description   String?
+  price         Float
+  comparePrice  Float?
+  images        Json      // Array of image URLs
+  sizes         Json?     // Array of size strings e.g. ["S", "M", "L", "XL"]
+  colors        Json?     // Array of color objects e.g. [{"name": "Red", "hex": "#FF0000"}]
+  stock         Int       @default(0)
+  isFeatured    Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  
+  categoryId    String    @db.ObjectId
+  category      Category  @relation(fields: [categoryId], references: [id])
+  
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+  wishlist      Wishlist[]
+  recentlyViewed RecentlyViewed[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([categoryId])
+  @@index([isFeatured])
+  @@index([isActive])
+}
+
+// ============================================================
+// CART
+// ============================================================
+
+model CartItem {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  quantity    Int       @default(1)
+  size        String?
+  color       String?
+  
+  userId      String    @db.ObjectId
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  productId   String    @db.ObjectId
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, productId, size, color])
+  @@index([userId])
+}
+
+// ============================================================
+// ORDERS
+// ============================================================
+
+model Order {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  orderNumber     String    @unique
+  status          String    @default("pending") // pending, confirmed, processing, shipped, delivered, cancelled
+  
+  subtotal        Float
+  shippingCost    Float     @default(0)
+  total           Float
+  
+  // Shipping info
+  shippingAddress Json      // {name, phone, email, address, city, note}
+  paymentMethod   String    @default("cod") // cod, bank_transfer, telebirr
+  
+  userId          String    @db.ObjectId
+  user            User      @relation(fields: [userId], references: [id])
+  
+  items           OrderItem[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model OrderItem {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  quantity    Int
+  price       Float // Price at time of purchase
+  size        String?
+  color       String?
+  
+  // Snapshot of product info at purchase time
+  productName String
+  productImage String?
+  
+  orderId     String    @db.ObjectId
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  productId   String    @db.ObjectId
+  product     Product   @relation(fields: [productId], references: [id])
+  
+  @@index([orderId])
+}
+
+// ============================================================
+// WISHLIST & RECENTLY VIEWED
+// ============================================================
+
+model Wishlist {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  
+  userId      String    @db.ObjectId
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  productId   String    @db.ObjectId
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId])
+}
+
+model RecentlyViewed {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  
+  userId      String    @db.ObjectId
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  productId   String    @db.ObjectId
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  viewedAt    DateTime  @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([viewedAt])
+}
+
+// ============================================================
+// ADDRESSES
+// ============================================================
+
+model Address {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  label       String?   // e.g. "Home", "Office"
+  name        String
+  phone       String
+  address     String
+  city        String
+  isDefault   Boolean   @default(false)
+  
+  userId      String    @db.ObjectId
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+// ============================================================
+// STORE SETTINGS
+// ============================================================
+
+model StoreSetting {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  key         String    @unique
+  value       String
+  
+  updatedAt   DateTime  @updatedAt
+}
