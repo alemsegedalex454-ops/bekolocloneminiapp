@@ -102,9 +102,9 @@ export default function StorePage({ navigate }: StorePageProps) {
   return (
     <div className="min-h-screen bg-[#F9F9FB]">
       {/* Sticky header */}
-      <header className="sticky top-0 z-30 bg-[#F9F9FB]/95 backdrop-blur px-4 pt-4 pb-3 border-b border-[#EBEBEB]">
-        <div className="flex items-center justify-between gap-4">
-          <SummitetLogo align="left" size={20} />
+      <header className="sticky top-0 z-30 bg-[#F9F9FB]/95 backdrop-blur pt-4 pb-3 border-b border-[#EBEBEB]">
+        <div className="flex items-center justify-between gap-4 px-4">
+          <SummitetLogo align="left" size={20} className="pl-1" />
           <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={() => {
@@ -144,7 +144,7 @@ export default function StorePage({ navigate }: StorePageProps) {
         </div>
 
         {/* Category pills */}
-        <div className="mt-5 flex gap-4 overflow-x-auto no-scrollbar pb-1">
+        <div className="mt-6 flex gap-4 overflow-x-auto no-scrollbar px-4 pb-1">
           <CategoryPill active={activeCat === 'all'} onClick={() => setActiveCat('all')}>All</CategoryPill>
           {categories.map((c) => (
             <CategoryPill key={c.id} active={activeCat === c.slug} onClick={() => setActiveCat(c.slug)}>
@@ -154,7 +154,7 @@ export default function StorePage({ navigate }: StorePageProps) {
         </div>
 
         {/* Price pills */}
-        <div className="mt-4 flex gap-3 overflow-x-auto no-scrollbar pb-1">
+        <div className="mt-5 flex gap-5 overflow-x-auto no-scrollbar px-4 pb-1.5">
           {PRICE_RANGES.map((r, i) => (
             <button
               key={r.label}
@@ -175,7 +175,7 @@ export default function StorePage({ navigate }: StorePageProps) {
       </header>
 
       {/* Grid */}
-      <main className="px-4 pt-3 pb-10">
+      <main className="px-4 pt-6 pb-10">
         <div className="grid grid-cols-2 gap-3">
           {products.map((p) => (
             <ProductCard
