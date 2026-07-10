@@ -33,10 +33,10 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#1A1A1A]">
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#235D65]">
       {/* Futuristic ambient glow effects */}
-      <div className="absolute top-[5%] left-[-15%] w-[320px] h-[320px] rounded-full bg-[#FFD02B]/10 blur-[120px] pointer-events-none animate-pulse duration-[8000ms]" />
-      <div className="absolute top-[25%] right-[-15%] w-[300px] h-[300px] rounded-full bg-[#007AFF]/10 blur-[100px] pointer-events-none animate-pulse duration-[10000ms]" />
+      <div className="absolute top-[5%] left-[-15%] w-[320px] h-[320px] rounded-full bg-[#FFD02B]/8 blur-[120px] pointer-events-none animate-pulse duration-[8000ms]" />
+      <div className="absolute top-[25%] right-[-15%] w-[300px] h-[300px] rounded-full bg-white/5 blur-[100px] pointer-events-none animate-pulse duration-[10000ms]" />
 
       {/* Main backdrop watermark logo - clearly visible on dark background */}
       <div className="pointer-events-none absolute inset-x-0 top-[18%] flex flex-col items-center justify-center opacity-[0.25] select-none scale-[1.3] sm:scale-[1.6] duration-700">
