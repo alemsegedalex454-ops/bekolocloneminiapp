@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { useTelegram } from '@/providers/TelegramProvider';
 import { hapticFeedback } from '@/lib/telegram';
+import api from '@/lib/api';
 
 /* ---------- Bekollo wordmark with smiley-sun "o" ---------- */
 function BekolloLogo({ size = 32 }: { size?: number }) {
@@ -63,9 +64,19 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
   const username = user?.username ? `@${user.username}` : '';
   const initial = displayName.charAt(0).toUpperCase();
 
-  const handleContinue = () => {
+  const [loading, setLoading] = useState(false);
+
+  const handleContinue = async () => {
     hapticFeedback('notification');
-    onContinue();
+    setLoading(true);
+    try {
+      await api.post('/users/auth');
+    } catch (err) {
+      console.warn('Failed to ensure backend user registration:', err);
+    } finally {
+      setLoading(false);
+      onContinue();
+    }
   };
 
   return (
@@ -126,9 +137,10 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
         {/* CTA */}
         <button
           onClick={handleContinue}
-          className="mt-5 flex h-[54px] w-full items-center justify-center rounded-full bg-[#FFD02B] text-[15px] font-bold uppercase tracking-wide text-black transition active:scale-[0.98] tap-active"
+          disabled={loading}
+          className="mt-5 flex h-[54px] w-full items-center justify-center rounded-full bg-[#FFD02B] text-[15px] font-bold uppercase tracking-wide text-black transition active:scale-[0.98] tap-active disabled:opacity-60"
         >
-          Continue with Telegram
+          {loading ? 'Connecting…' : 'Continue with Telegram'}
         </button>
 
         <p className="mx-auto mt-4 max-w-[300px] text-center text-[12px] leading-relaxed text-neutral-400">

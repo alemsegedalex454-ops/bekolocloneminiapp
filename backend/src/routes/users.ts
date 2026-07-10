@@ -5,6 +5,21 @@ import { authenticateTelegram } from '../middleware/auth';
 const router = Router();
 router.use(authenticateTelegram);
 
+// POST /api/users/auth - Validate Telegram session and ensure registration
+router.post('/auth', async (req: Request, res: Response) => {
+  try {
+    res.json({
+      success: true,
+      user: {
+        ...req.user,
+        telegramId: req.user!.telegramId.toString(),
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to authenticate user' });
+  }
+});
+
 // GET /api/users/me - Get current user
 router.get('/me', async (req: Request, res: Response) => {
   try {
