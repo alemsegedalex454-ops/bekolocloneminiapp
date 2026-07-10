@@ -60,8 +60,8 @@ interface WelcomeScreenProps {
 export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
   const { user, isReady } = useTelegram();
 
-  const displayName = user?.first_name || 'በትረማርያም';
-  const username = user?.username ? `@${user.username}` : '@Betremariam';
+  const displayName = user?.first_name || 'Customer';
+  const username = user?.username ? `@${user.username}` : '';
   const initial = displayName.charAt(0);
 
   const [loading, setLoading] = useState(false);
@@ -123,9 +123,11 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
             <p className="truncate text-[15px] font-semibold text-black">
               {displayName}
             </p>
-            <p className="truncate text-[13px] text-neutral-500">
-              {username}
-            </p>
+            {username && (
+              <p className="truncate text-[13px] text-neutral-500">
+                {username}
+              </p>
+            )}
           </div>
           <div className="flex h-5 w-5 items-center justify-center rounded-full border border-emerald-500 text-emerald-500 bg-emerald-50/50">
             <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">

@@ -34,24 +34,41 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
   const [isInTelegram, setIsInTelegram] = useState(false);
 
   useEffect(() => {
-    // In development, mock the environment
-    if (process.env.NODE_ENV === 'development') {
-      mockTelegramEnv();
+    const initTelegram = () => {
+      if (process.env.NODE_ENV === 'development' && !(window as any).Telegram?.WebApp?.initData) {
+        mockTelegramEnv();
+      }
+
+      const inTelegram = isTelegramEnvironment();
+      setIsInTelegram(inTelegram);
+
+      const tgUser = getTelegramUser();
+      if (tgUser) {
+        setUser(tgUser);
+      }
+
+      // Tell Telegram we're ready
+      signalReady();
+      expandMiniApp();
+      setHeaderColor('#FFFFFF');
+      setIsReady(true);
+    };
+
+    // If script is already fully loaded
+    if (typeof window !== 'undefined' && ((window as any).Telegram?.WebApp || process.env.NODE_ENV === 'development')) {
+      initTelegram();
+    } else {
+      // Poll every 50ms for up to 1 second to wait for async script injection
+      let attempts = 0;
+      const interval = setInterval(() => {
+        attempts++;
+        if ((window as any).Telegram?.WebApp || attempts > 20) {
+          clearInterval(interval);
+          initTelegram();
+        }
+      }, 50);
+      return () => clearInterval(interval);
     }
-
-    const inTelegram = isTelegramEnvironment();
-    setIsInTelegram(inTelegram);
-
-    const tgUser = getTelegramUser();
-    if (tgUser) {
-      setUser(tgUser);
-    }
-
-    // Tell Telegram we're ready
-    signalReady();
-    expandMiniApp();
-    setHeaderColor('#FFFFFF');
-    setIsReady(true);
   }, []);
 
   return (
