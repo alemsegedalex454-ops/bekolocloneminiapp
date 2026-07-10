@@ -89,6 +89,10 @@ export interface Order {
   total: number;
   shippingAddress: ShippingAddress;
   paymentMethod: string;
+  receiptUrl?: string;
+  senderName?: string;
+  transactionCode?: string;
+  paymentPhone?: string;
   items: OrderItem[];
   createdAt: string;
   updatedAt: string;

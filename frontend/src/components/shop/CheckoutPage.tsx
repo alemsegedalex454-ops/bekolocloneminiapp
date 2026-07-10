@@ -31,7 +31,13 @@ export default function CheckoutPage({ navigate, goBack }: CheckoutPageProps) {
     city: 'Addis Ababa',
     note: '',
     paymentMethod: 'cod',
+    receiptUrl: '',
+    senderName: '',
+    transactionCode: '',
+    paymentPhone: '',
   });
+
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
 
   useEffect(() => {
     api.get('/users/addresses').then(({ data }) => {
@@ -53,11 +59,52 @@ export default function CheckoutPage({ navigate, goBack }: CheckoutPageProps) {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleReceiptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('error', 'File size exceeds 5MB limit');
+      return;
+    }
+
+    try {
+      setUploadingReceipt(true);
+      const uploadData = new FormData();
+      uploadData.append('receipt', file);
+
+      const { data } = await api.post('/orders/receipt-upload', uploadData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setFormData(prev => ({ ...prev, receiptUrl: data.url }));
+      showToast('success', 'Receipt uploaded successfully');
+    } catch {
+      showToast('error', 'Failed to upload receipt image');
+    } finally {
+      setUploadingReceipt(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!formData.name || !formData.phone || !formData.address) {
       showToast('error', 'Please fill in all required fields');
       return;
     }
+
+    const isManualPay = formData.paymentMethod === 'bank_transfer' || formData.paymentMethod === 'telebirr';
+    if (isManualPay && !formData.receiptUrl) {
+      showToast('error', 'Please upload a receipt screenshot to complete order');
+      return;
+    }
+
+    if (isManualPay && (!formData.senderName || !formData.transactionCode || !formData.paymentPhone)) {
+      showToast('error', 'Please fill in all depositor receipt details');
+      return;
+    }
+
     try {
       setSubmitting(true);
       const { data } = await api.post('/orders', {
@@ -70,6 +117,10 @@ export default function CheckoutPage({ navigate, goBack }: CheckoutPageProps) {
           note: formData.note,
         },
         paymentMethod: formData.paymentMethod,
+        receiptUrl: formData.receiptUrl,
+        senderName: formData.senderName,
+        transactionCode: formData.transactionCode,
+        paymentPhone: formData.paymentPhone,
       });
       clearCart();
       navigate({ name: 'checkout-success', orderNumber: data.order.orderNumber });
@@ -297,6 +348,109 @@ export default function CheckoutPage({ navigate, goBack }: CheckoutPageProps) {
                 ))}
               </div>
             </div>
+
+            {/* Payment Method instructions */}
+            {(formData.paymentMethod === 'bank_transfer' || formData.paymentMethod === 'telebirr') && (
+              <div className="mb-6 rounded-2xl border p-4 bg-[#FFD02B]/5 border-[#FFD02B]/20 animate-scale-in">
+                <h4 className="text-sm font-bold mb-2 flex items-center gap-2">
+                  <span>🏦</span> Transfer Instructions
+                </h4>
+                {formData.paymentMethod === 'bank_transfer' ? (
+                  <div className="space-y-1.5 text-xs text-neutral-600">
+                    <p>Please transfer the total order amount to our bank account:</p>
+                    <div className="bg-white p-2.5 rounded-xl border border-neutral-200 font-mono leading-normal text-black mt-2">
+                      <p><b>Bank:</b> Commercial Bank of Ethiopia (CBE)</p>
+                      <p><b>Name:</b> Summitet Glorious Peak</p>
+                      <p><b>Account:</b> <span className="font-bold select-all bg-neutral-100 px-1 rounded">1000543210987</span></p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5 text-xs text-neutral-600">
+                    <p>Please send the total order amount via Telebirr:</p>
+                    <div className="bg-white p-2.5 rounded-xl border border-neutral-200 font-mono leading-normal text-black mt-2">
+                      <p><b>Merchant Name:</b> Summitet Peak Store</p>
+                      <p><b>Phone / ID:</b> <span className="font-bold select-all bg-neutral-100 px-1 rounded">+251987654321</span></p>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="mt-4 space-y-3">
+                  <div>
+                    <label className="text-[11px] font-medium text-neutral-500 mb-1 block">Depositor / Sender Full Name *</label>
+                    <input
+                      type="text"
+                      value={formData.senderName}
+                      onChange={(e) => updateField('senderName', e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl text-xs border outline-none bg-white focus:ring-1"
+                      style={{ borderColor: branding.colors.border, '--tw-ring-color': branding.colors.primary } as any}
+                      placeholder="Name used for transfer"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-medium text-neutral-500 mb-1 block">Transaction Reference / Code *</label>
+                    <input
+                      type="text"
+                      value={formData.transactionCode}
+                      onChange={(e) => updateField('transactionCode', e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl text-xs border outline-none bg-white focus:ring-1"
+                      style={{ borderColor: branding.colors.border, '--tw-ring-color': branding.colors.primary } as any}
+                      placeholder="e.g. FT26..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-medium text-neutral-500 mb-1 block">Payment Mobile Number *</label>
+                    <input
+                      type="tel"
+                      value={formData.paymentPhone}
+                      onChange={(e) => updateField('paymentPhone', e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl text-xs border outline-none bg-white focus:ring-1"
+                      style={{ borderColor: branding.colors.border, '--tw-ring-color': branding.colors.primary } as any}
+                      placeholder="+251..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-medium text-neutral-500 mb-2 block">Upload Payment Screenshot / Receipt *</label>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleReceiptUpload}
+                        className="hidden"
+                        id="receipt-file-input"
+                        disabled={uploadingReceipt}
+                      />
+                      <label
+                        htmlFor="receipt-file-input"
+                        className="flex flex-col items-center justify-center border border-dashed rounded-xl p-4 cursor-pointer hover:bg-neutral-50/50 transition-all text-center gap-1.5 bg-white"
+                        style={{ borderColor: branding.colors.border }}
+                      >
+                        {uploadingReceipt ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-neutral-600 border-t-transparent rounded-full animate-spin" />
+                            <span className="text-xs text-neutral-500">Uploading receipt screenshot...</span>
+                          </>
+                        ) : formData.receiptUrl ? (
+                          <>
+                            <span className="text-green-500 text-lg">✅</span>
+                            <span className="text-xs font-semibold text-green-600">Receipt Screenshot Uploaded</span>
+                            <span className="text-[10px] text-neutral-400 truncate max-w-[200px]">Click to replace file</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-lg">📸</span>
+                            <span className="text-xs font-medium text-neutral-600">Select Receipt Image</span>
+                            <span className="text-[10px] text-neutral-400">PNG, JPG up to 5MB</span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Order Summary */}
             <div className="rounded-xl border p-4 mb-6" style={{ borderColor: branding.colors.border }}>

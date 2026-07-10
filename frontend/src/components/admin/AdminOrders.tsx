@@ -12,6 +12,7 @@ export default function AdminOrders() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   const fetchOrders = async () => {
     try {
@@ -33,12 +34,22 @@ export default function AdminOrders() {
     fetchOrders();
   }, [filter, search, page]);
 
-  const updateStatus = async (orderId: number, status: string) => {
+  const updateStatus = async (orderId: string, status: string) => {
     try {
       await api.put(`/admin/orders/${orderId}/status`, { status });
       fetchOrders();
     } catch (err: any) {
       alert(err.response?.data?.error || 'Failed to update status');
+    }
+  };
+
+  const getShippingVal = (addr: any, key: string) => {
+    if (!addr) return '';
+    try {
+      const parsed = typeof addr === 'string' ? JSON.parse(addr) : addr;
+      return parsed[key] || '';
+    } catch {
+      return '';
     }
   };
 
@@ -103,8 +114,12 @@ export default function AdminOrders() {
               ) : orders.length === 0 ? (
                 <tr><td colSpan={7} className="px-5 py-12 text-center text-gray-400">No orders found</td></tr>
               ) : (
-                orders.map((order: any) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
+                orders.flatMap((order: any) => [
+                  <tr
+                    key={order.id}
+                    onClick={() => setSelectedOrderId(selectedOrderId === order.id ? null : order.id)}
+                    className={`hover:bg-gray-50 cursor-pointer transition-colors ${selectedOrderId === order.id ? 'bg-gray-50/60 font-semibold' : ''}`}
+                  >
                     <td className="px-5 py-3 font-mono text-xs font-medium">{order.orderNumber}</td>
                     <td className="px-5 py-3">
                       <p className="text-sm">{order.user?.firstName} {order.user?.lastName || ''}</p>
@@ -120,7 +135,7 @@ export default function AdminOrders() {
                     <td className="px-5 py-3 text-xs text-gray-400">
                       {new Date(order.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-5 py-3 text-right">
+                    <td className="px-5 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                       <select
                         value={order.status}
                         onChange={(e) => updateStatus(order.id, e.target.value)}
@@ -134,8 +149,73 @@ export default function AdminOrders() {
                         <option value="cancelled">Cancelled</option>
                       </select>
                     </td>
-                  </tr>
-                ))
+                  </tr>,
+                  selectedOrderId === order.id && (
+                    <tr key={`${order.id}-detail`} className="bg-gray-50/30">
+                      <td colSpan={7} className="px-5 py-4 border-b border-gray-100">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-5 rounded-xl border border-gray-150 shadow-sm animate-fade-in">
+                          <div className="space-y-3">
+                            <div>
+                              <h4 className="font-bold text-xs text-gray-400 uppercase tracking-wider mb-2">Customer Details</h4>
+                              <p className="text-sm text-gray-800"><b>Name:</b> {getShippingVal(order.shippingAddress, 'name')}</p>
+                              <p className="text-sm text-gray-800"><b>Phone:</b> {getShippingVal(order.shippingAddress, 'phone')}</p>
+                              <p className="text-sm text-gray-800"><b>Address:</b> {getShippingVal(order.shippingAddress, 'address')}, {getShippingVal(order.shippingAddress, 'city')}</p>
+                              {getShippingVal(order.shippingAddress, 'note') && (
+                                <p className="text-sm text-gray-800"><b>Note:</b> {getShippingVal(order.shippingAddress, 'note')}</p>
+                              )}
+                            </div>
+
+                            <div className="pt-2">
+                              <h4 className="font-bold text-xs text-gray-400 uppercase tracking-wider mb-2">Payment Details</h4>
+                              <p className="text-sm text-gray-800 capitalize"><b>Method:</b> {order.paymentMethod.replace('_', ' ')}</p>
+                              {order.senderName && <p className="text-sm text-gray-800"><b>Sender Name:</b> {order.senderName}</p>}
+                              {order.transactionCode && <p className="text-sm text-gray-800"><b>Tx Ref Code:</b> {order.transactionCode}</p>}
+                              {order.paymentPhone && <p className="text-sm text-gray-800"><b>Payment Phone:</b> {order.paymentPhone}</p>}
+                            </div>
+                          </div>
+
+                          <div className="space-y-4">
+                            <div>
+                              <h4 className="font-bold text-xs text-gray-400 uppercase tracking-wider mb-2">Screenshot Receipt</h4>
+                              {order.receiptUrl ? (
+                                <div className="space-y-2">
+                                  <a
+                                    href={order.receiptUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block max-w-[280px] border border-gray-200 rounded-lg overflow-hidden hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 transition-all cursor-zoom-in"
+                                  >
+                                    <img src={order.receiptUrl} alt="Payment Receipt" className="w-full h-auto object-contain max-h-[220px] bg-gray-50" />
+                                  </a>
+                                  <p className="text-[10px] text-gray-400 italic">Click photo to view in full size</p>
+                                </div>
+                              ) : (
+                                <p className="text-xs text-gray-400 italic">No receipt file uploaded (Cash on Delivery)</p>
+                              )}
+                            </div>
+
+                            {order.status === 'pending' && (order.paymentMethod === 'bank_transfer' || order.paymentMethod === 'telebirr') && (
+                              <div className="flex gap-2 pt-2">
+                                <button
+                                  onClick={() => updateStatus(order.id, 'confirmed')}
+                                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all"
+                                >
+                                  Approve Payment
+                                </button>
+                                <button
+                                  onClick={() => updateStatus(order.id, 'cancelled')}
+                                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all"
+                                >
+                                  Reject / Cancel Order
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                ])
               )}
             </tbody>
           </table>

@@ -1,5 +1,7 @@
 import { Telegraf, Markup } from 'telegraf';
 
+import prisma from '../lib/prisma';
+
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const WEBAPP_URL = process.env.WEBAPP_URL || 'https://your-domain.com';
 
@@ -9,6 +11,81 @@ if (!BOT_TOKEN) {
 }
 
 const bot = new Telegraf(BOT_TOKEN);
+
+// Action handlers for order receipts approval/rejection
+bot.action(/^approve_order:(.+)$/, async (ctx) => {
+  const orderId = ctx.match[1];
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+    });
+
+    if (!order) {
+      await ctx.answerCbQuery('Order not found ❌');
+      return;
+    }
+
+    if (order.status !== 'pending') {
+      await ctx.answerCbQuery(`Order is already ${order.status} ℹ️`);
+      return;
+    }
+
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status: 'confirmed' },
+    });
+
+    await ctx.answerCbQuery('Order approved successfully! ✅');
+
+    const caption = ctx.callbackQuery.message && 'caption' in ctx.callbackQuery.message
+      ? ctx.callbackQuery.message.caption
+      : '';
+    
+    await ctx.editMessageCaption(`${caption}\n\n🟢 <b>Approved by Admin</b>`, {
+      parse_mode: 'HTML',
+    });
+  } catch (error) {
+    console.error('Approve callback query error:', error);
+    await ctx.answerCbQuery('Error processing request ❌');
+  }
+});
+
+bot.action(/^reject_order:(.+)$/, async (ctx) => {
+  const orderId = ctx.match[1];
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+    });
+
+    if (!order) {
+      await ctx.answerCbQuery('Order not found ❌');
+      return;
+    }
+
+    if (order.status !== 'pending') {
+      await ctx.answerCbQuery(`Order is already ${order.status} ℹ️`);
+      return;
+    }
+
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status: 'cancelled' },
+    });
+
+    await ctx.answerCbQuery('Order rejected ❌');
+
+    const caption = ctx.callbackQuery.message && 'caption' in ctx.callbackQuery.message
+      ? ctx.callbackQuery.message.caption
+      : '';
+
+    await ctx.editMessageCaption(`${caption}\n\n🔴 <b>Rejected by Admin</b>`, {
+      parse_mode: 'HTML',
+    });
+  } catch (error) {
+    console.error('Reject callback query error:', error);
+    await ctx.answerCbQuery('Error processing request ❌');
+  }
+});
 
 // /start command
 bot.start(async (ctx) => {
