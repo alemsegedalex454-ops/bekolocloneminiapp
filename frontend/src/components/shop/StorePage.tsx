@@ -1,198 +1,137 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
-import type { Category, Product } from '@/types';
-import api from '@/lib/api';
+import React, { useEffect, useState, useCallback } from 'react';
+import { ShoppingBag } from 'lucide-react';
 import { useCart } from '@/providers/CartProvider';
 import { useTelegram } from '@/providers/TelegramProvider';
+import api from '@/lib/api';
+import { Product, Category } from '@/types';
+import ProductCard from './ProductCard';
+import { BekolloLogo } from './BekolloLogo';
 import { hapticFeedback } from '@/lib/telegram';
 import { branding } from '@/config/branding';
-import ProductCard from './ProductCard';
 import type { Screen } from './ShopApp';
-import { ShoppingBag } from 'lucide-react';
 
 const PRICE_RANGES = [
-  { label: 'Under 100 Br', min: 0, max: 100 },
-  { label: '100 - 500 Br', min: 100, max: 500 },
-  { label: '500 - 1000 Br', min: 500, max: 1000 },
-  { label: 'Over 1000 Br', min: 1000, max: null },
-] as const;
+  { label: 'Under 100 Br', min: 0,    max: 100 },
+  { label: '100 - 500 Br', min: 100,  max: 500 },
+  { label: '500 - 1000 Br',min: 500,  max: 1000 },
+  { label: 'Over 1000 Br', min: 1000, max: undefined },
+];
 
 interface StorePageProps {
   navigate: (screen: Screen) => void;
 }
 
-function BekolloLogo() {
-  return (
-    <div className="flex items-center gap-0.5 text-[26px] font-extrabold leading-none tracking-tight text-[#1A1A1A]">
-      <span>Bek</span>
-      <span className="relative inline-block h-[26px] w-[26px]">
-        {/* sun rays */}
-        <svg
-          viewBox="0 0 32 32"
-          className="absolute -top-2 left-1/2 h-[14px] w-[22px] -translate-x-1/2 text-[#FFD02B]"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          {Array.from({ length: 7 }).map((_, i) => {
-            const angle = -70 + i * 23;
-            const rad = (angle * Math.PI) / 180;
-            const x1 = 16 + Math.cos(rad) * 10;
-            const y1 = 16 + Math.sin(rad) * 10;
-            const x2 = 16 + Math.cos(rad) * 15;
-            const y2 = 16 + Math.sin(rad) * 15;
-            return (
-              <line
-                key={i}
-                x1={x1}
-                y1={y1}
-                x2={x2}
-                y2={y2}
-                stroke="currentColor"
-                strokeWidth={2.5}
-                strokeLinecap="round"
-              />
-            );
-          })}
-        </svg>
-        {/* smiley face */}
-        <span className="absolute inset-0 grid place-items-center rounded-full bg-[#FFD02B]">
-          <svg viewBox="0 0 20 20" className="h-3 w-3 text-[#1A1A1A]" aria-hidden="true">
-            <circle cx="7" cy="8" r="1.2" fill="currentColor" />
-            <circle cx="13" cy="8" r="1.2" fill="currentColor" />
-            <path
-              d="M6 12 Q10 15 14 12"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-            />
-          </svg>
-        </span>
-      </span>
-      <span>llo</span>
-    </div>
-  );
-}
-
 export default function StorePage({ navigate }: StorePageProps) {
-  const { user } = useTelegram();
   const { count } = useCart();
+  const { user } = useTelegram();
 
   const [categories, setCategories] = useState<Category[]>([]);
+  const [activeCat, setActiveCat] = useState<string>('all');
+  const [priceIdx, setPriceIdx] = useState<number | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
-  const [wishlistIds, setWishlistIds] = useState<string[]>([]);
-
-  const [activeCategory, setActiveCategory] = useState<string>('all'); // 'all' | slug
-  const [activePriceIdx, setActivePriceIdx] = useState<number | null>(null);
-
+  const [wishIds, setWishIds] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
-  // Load categories and wishlist IDs
   useEffect(() => {
-    api.get('/categories')
-      .then((r) => setCategories(r.data?.categories ?? []))
-      .catch(() => {});
-    api.get('/users/wishlist/ids')
-      .then((r) => setWishlistIds(r.data?.productIds ?? []))
-      .catch(() => {});
+    (async () => {
+      try {
+        const [catsRes, wishRes] = await Promise.all([
+          api.get('/categories'),
+          api.get('/users/wishlist/ids').catch(() => ({ data: { productIds: [] } })),
+        ]);
+        setCategories(catsRes.data?.categories ?? catsRes.data ?? []);
+        setWishIds(wishRes.data?.productIds ?? []);
+      } catch {}
+    })();
   }, []);
 
-  // Products (reset on filter change)
-  useEffect(() => {
-    setPage(1);
-    setProducts([]);
-    loadProducts(1, true);
-  }, [activeCategory, activePriceIdx]);
-
-  const loadProducts = async (nextPage: number, replace = false) => {
-    if (replace) {
-      setLoading(true);
-    } else {
-      setLoadingMore(true);
-    }
-
+  const load = useCallback(async (replace = false, pageNum = 1) => {
+    setLoading(true);
     try {
-      const price = activePriceIdx != null ? PRICE_RANGES[activePriceIdx] : null;
-      const { data } = await api.get('/products', {
+      const range = priceIdx !== null ? PRICE_RANGES[priceIdx] : null;
+      const res = await api.get('/products', {
         params: {
-          page: nextPage,
-          limit: 12,
-          category: activeCategory === 'all' ? undefined : activeCategory,
-          minPrice: price?.min,
-          maxPrice: price?.max,
+          page: pageNum,
+          limit: 10,
+          category: activeCat !== 'all' ? activeCat : undefined,
+          minPrice: range?.min,
+          maxPrice: range?.max,
         },
       });
-
-      setProducts((prev) =>
-        replace ? data.products ?? [] : [...prev, ...(data.products ?? [])]
-      );
-      setHasMore(Boolean(data?.pagination?.hasMore));
-      setPage(nextPage);
-    } catch (e) {
-      console.error(e);
+      const data = res.data;
+      setProducts((prev) => (replace ? data.products ?? [] : [...prev, ...(data.products ?? [])]));
+      setHasMore(Boolean(data?.pagination?.hasMore ?? data?.hasMore));
+      setPage(pageNum);
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
-  };
+  }, [activeCat, priceIdx]);
+
+  useEffect(() => {
+    load(true, 1);
+  }, [load]);
+
+  useEffect(() => {
+    const onScroll = () => {
+      if (loading || !hasMore) return;
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 400) {
+        load(false, page + 1);
+      }
+    };
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [loading, hasMore, page, load]);
 
   const toggleWishlist = async (productId: string) => {
     try {
       const { data } = await api.post('/users/wishlist', { productId });
       if (data.wishlisted) {
-        setWishlistIds((prev) => [...prev, productId]);
+        setWishIds((prev) => [...prev, productId]);
       } else {
-        setWishlistIds((prev) => prev.filter((id) => id !== productId));
+        setWishIds((prev) => prev.filter((id) => id !== productId));
       }
     } catch {
-      // silent fail
+      // silent rollback
     }
   };
-
-  const categoryPills = useMemo(
-    () => [{ id: 'all', name: 'All', slug: 'all', sortOrder: 0 }, ...categories],
-    [categories]
-  );
 
   return (
     <div className="min-h-screen bg-[#F9F9FB]">
       {/* Sticky header */}
-      <header className="sticky top-0 z-30 bg-[#F9F9FB]/90 backdrop-blur-md border-b border-[#EBEBEB]">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
+      <header className="sticky top-0 z-30 bg-[#F9F9FB]/95 backdrop-blur px-4 pt-4 pb-3 border-b border-[#EBEBEB]">
+        <div className="flex items-center justify-between">
           <BekolloLogo />
-
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => {
                 hapticFeedback('impact');
                 navigate({ name: 'cart' });
               }}
-              className="inline-flex h-10 items-center gap-2 rounded-full bg-[#1A1A1A] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#333] tap-active"
+              className="flex h-11 items-center gap-2 rounded-full bg-black px-4 text-white hover:bg-neutral-800 transition-colors tap-active"
             >
-              <ShoppingBag size={15} strokeWidth={2.2} />
-              <span>{branding.cartButton.text}</span>
+              <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={2} />
+              <span className="text-[15px] font-semibold">{branding.cartButton.text}</span>
               {count > 0 && (
-                <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FFD02B] px-1.5 text-[11px] font-bold text-[#1A1A1A]">
+                <span className="ml-1 rounded-full bg-[#FFD02B] px-1.5 text-[11px] font-bold text-black animate-scale-in">
                   {count}
                 </span>
               )}
             </button>
-
             <button
               onClick={() => {
                 hapticFeedback('impact');
                 navigate({ name: 'account' });
               }}
-              className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-[#1A1A1A] text-white ring-2 ring-white hover:brightness-95 tap-active"
+              className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-black text-white ring-2 ring-white hover:brightness-95 tap-active"
             >
               {user?.photo_url ? (
                 <img
                   src={user.photo_url}
-                  alt={user.first_name}
+                  alt="You"
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -205,97 +144,71 @@ export default function StorePage({ navigate }: StorePageProps) {
         </div>
 
         {/* Category pills */}
-        <div className="mx-auto max-w-2xl overflow-x-auto px-4 pb-2.5 [&::-webkit-scrollbar]:hidden">
-          <div className="flex items-center gap-2">
-            {categoryPills.map((c) => {
-              const active = activeCategory === c.slug;
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => {
-                    hapticFeedback('selection');
-                    setActiveCategory(c.slug);
-                  }}
-                  className={
-                    'shrink-0 rounded-full px-5 py-2 text-sm font-semibold transition-colors tap-active ' +
-                    (active
-                      ? 'bg-[#1A1A1A] text-white'
-                      : 'border border-[#EEEEEE] bg-white text-[#1A1A1A] hover:border-[#1A1A1A]/20')
-                  }
-                >
-                  {c.name}
-                </button>
-              );
-            })}
-          </div>
+        <div className="mt-4 flex gap-2 overflow-x-auto no-scrollbar">
+          <CategoryPill active={activeCat === 'all'} onClick={() => setActiveCat('all')}>All</CategoryPill>
+          {categories.map((c) => (
+            <CategoryPill key={c.id} active={activeCat === c.slug} onClick={() => setActiveCat(c.slug)}>
+              {c.name}
+            </CategoryPill>
+          ))}
         </div>
 
         {/* Price pills */}
-        <div className="mx-auto max-w-2xl overflow-x-auto px-4 pb-3.5 [&::-webkit-scrollbar]:hidden">
-          <div className="flex items-center gap-2">
-            {PRICE_RANGES.map((r, i) => {
-              const active = activePriceIdx === i;
-              return (
-                <button
-                  key={r.label}
-                  onClick={() => {
-                    hapticFeedback('selection');
-                    setActivePriceIdx(active ? null : i);
-                  }}
-                  className={
-                    'shrink-0 rounded-full px-4 py-2 text-[13px] font-medium transition-colors tap-active ' +
-                    (active
-                      ? 'bg-[#1A1A1A] text-white'
-                      : 'border border-[#EEEEEE] bg-white text-[#6B7280] hover:border-[#1A1A1A]/20')
-                  }
-                >
-                  {r.label}
-                </button>
-              );
-            })}
-          </div>
+        <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar">
+          {PRICE_RANGES.map((r, i) => (
+            <button
+              key={r.label}
+              onClick={() => {
+                hapticFeedback('selection');
+                setPriceIdx(priceIdx === i ? null : i);
+              }}
+              className={`h-9 shrink-0 rounded-full border px-4 text-[13px] transition tap-active ${
+                priceIdx === i
+                  ? 'border-black bg-black text-white'
+                  : 'border-neutral-200 bg-white text-neutral-500'
+              }`}
+            >
+              {r.label}
+            </button>
+          ))}
         </div>
       </header>
 
       {/* Grid */}
-      <main className="mx-auto max-w-2xl px-4 pb-24 pt-4">
-        {loading && products.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-sm text-[#9CA3AF]">Loading...</p>
-          </div>
-        ) : products.length === 0 ? (
-          <p className="py-16 text-center text-sm text-[#9CA3AF]">
-            No products found.
-          </p>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 gap-3.5">
-              {products.map((p) => (
-                <ProductCard
-                  key={p.id}
-                  product={p}
-                  isWishlisted={wishlistIds.includes(p.id)}
-                  onSelect={() => navigate({ name: 'product', slug: p.slug })}
-                  onToggleWishlist={() => toggleWishlist(p.id)}
-                />
-              ))}
-            </div>
-
-            {loadingMore && (
-              <p className="py-8 text-center text-sm text-[#9CA3AF]">Loading...</p>
-            )}
-
-            {!loadingMore && hasMore && (
-              <button
-                onClick={() => loadProducts(page + 1)}
-                className="mx-auto mt-8 block rounded-full border border-[#EEEEEE] bg-white px-6 py-2.5 text-sm font-semibold text-[#1A1A1A] hover:border-[#1A1A1A]/20 transition-colors tap-active"
-              >
-                Load more
-              </button>
-            )}
-          </>
+      <main className="px-4 pt-3 pb-10">
+        <div className="grid grid-cols-2 gap-3">
+          {products.map((p) => (
+            <ProductCard
+              key={p.id}
+              product={p}
+              isWishlisted={wishIds.includes(p.id)}
+              onSelect={() => navigate({ name: 'product', slug: p.slug })}
+              onToggleWishlist={() => toggleWishlist(p.id)}
+            />
+          ))}
+        </div>
+        {loading && (
+          <p className="mt-8 text-center text-[15px] text-neutral-400">Loading...</p>
         )}
       </main>
     </div>
+  );
+}
+
+function CategoryPill({
+  active, onClick, children,
+}: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={() => {
+        hapticFeedback('selection');
+        onClick();
+      }}
+      className={`h-11 shrink-0 rounded-full px-6 text-[16px] font-semibold transition tap-active ${
+        active ? 'bg-black text-white' : 'bg-transparent text-neutral-500'
+      }`}
+    >
+      {children}
+    </button>
   );
 }
