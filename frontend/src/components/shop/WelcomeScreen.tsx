@@ -44,83 +44,77 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
       </div>
 
       {/* Pop-up bottom sheet with smooth slide-up animation */}
-      <div className="fixed inset-x-0 bottom-0 max-h-[82vh] overflow-y-auto no-scrollbar rounded-t-[32px] bg-[#F9F9FB] px-6 pb-10 pt-4 shadow-[0_-12px_45px_rgba(0,0,0,0.3)] border-t border-white/50 animate-slide-up z-20 flex flex-col justify-between">
+      <div className="absolute inset-x-0 bottom-0 rounded-t-[28px] bg-[#F9F9FB] px-6 pb-8 pt-3 shadow-[0_-8px_40px_rgba(0,0,0,0.25)] animate-slide-up z-20">
         
-        <div>
-          {/* Drag handle */}
-          <div className="mx-auto mb-6 h-1 w-14 rounded-full bg-neutral-300/80 shrink-0" />
+        {/* Drag handle */}
+        <div className="mx-auto mb-6 h-1.5 w-10 rounded-full bg-black/15" />
 
-          {/* Logo inside sheet */}
-          <div className="mb-6 flex justify-center shrink-0">
-            <SummitetLogo size={28} />
-          </div>
+        {/* Logo inside sheet */}
+        <div className="mb-5 flex justify-center">
+          <SummitetLogo size={30} />
+        </div>
 
-          {/* Greeting */}
-          <div className="text-center flex flex-col gap-3.5 mb-6">
-            <h1 className="text-[23px] sm:text-[25px] font-extrabold text-black tracking-tight leading-tight flex items-center justify-center gap-1.5 animate-fade-in">
-              Welcome, {displayName} <span className="text-[23px] animate-bounce">🌞</span>
-            </h1>
-            
-            {/* Subtitle */}
-            <p className="mx-auto max-w-[310px] text-[14px] leading-relaxed text-neutral-500 font-medium">
-              Continue with your Telegram account to shop, save items, and track your orders.
+        {/* Greeting */}
+        <h1 className="text-center text-[22px] font-bold text-black flex items-center justify-center gap-1">
+          Welcome, {displayName} <span className="text-[22px]">🌞</span>
+        </h1>
+        
+        {/* Subtitle */}
+        <p className="mx-auto mt-2 max-w-[300px] text-center text-[14px] leading-relaxed text-neutral-500">
+          Continue with your Telegram account to shop, save items, and track your orders.
+        </p>
+
+        {/* User card wrapper */}
+        <div className="mt-6 flex items-center gap-3 rounded-2xl bg-white p-3 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-[#EBEBEB]">
+          {user?.photo_url ? (
+            <img
+              src={user.photo_url}
+              alt={displayName}
+              className="h-11 w-11 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-tr from-[#5E5CE6] to-[#007AFF] text-white font-semibold text-lg">
+              {initial}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[15px] font-semibold text-black">
+              {displayName}
             </p>
-          </div>
-
-          {/* User card wrapper */}
-          <div className="mb-6 flex items-center gap-3.5 rounded-2xl bg-white p-3.5 shadow-[0_4px_16px_rgba(0,0,0,0.03)] border border-[#EBEBEB] hover:border-neutral-200 transition-all duration-300">
-            {user?.photo_url ? (
-              <img
-                src={user.photo_url}
-                alt={displayName}
-                className="h-12 w-12 rounded-full object-cover ring-2 ring-neutral-50"
-              />
-            ) : (
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-[#5E5CE6] to-[#007AFF] text-white font-bold text-lg shadow-sm">
-                {initial}
-              </div>
-            )}
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[15px] font-bold text-black tracking-tight">
-                {displayName}
+            {username && (
+              <p className="truncate text-[13px] text-neutral-500">
+                {username}
               </p>
-              {username && (
-                <p className="truncate text-[13px] text-neutral-400 font-medium mt-0.5">
-                  {username}
-                </p>
-              )}
-            </div>
-            {/* Emerald check verified bubble */}
-            <div className="flex h-6 w-6 items-center justify-center rounded-full border border-emerald-500 text-emerald-500 bg-emerald-50/50 shrink-0">
-              <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </div>
+            )}
+          </div>
+          {/* Emerald check verified bubble */}
+          <div className="flex h-5 w-5 items-center justify-center rounded-full border border-emerald-500 text-emerald-500 bg-emerald-50/50 shrink-0">
+            <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
           </div>
         </div>
 
-        {/* CTA Button Wrapper */}
-        <div className="flex flex-col gap-5 mt-auto">
-          <button
-            onClick={handleContinue}
-            disabled={loading}
-            className="flex h-[56px] w-full items-center justify-center rounded-full bg-[#FFD02B] text-[15px] font-extrabold uppercase tracking-wider text-black shadow-[0_4px_20px_rgba(255,208,43,0.22)] active:scale-[0.98] transition-all duration-300 tap-active disabled:opacity-60 shrink-0"
-          >
-            {loading ? (
-              <div className="flex items-center gap-2">
-                <span className="h-4 w-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                <span>Connecting…</span>
-              </div>
-            ) : (
-              'Continue with Telegram'
-            )}
-          </button>
+        {/* CTA Button */}
+        <button
+          onClick={handleContinue}
+          disabled={loading}
+          className="mt-5 flex h-[54px] w-full items-center justify-center rounded-full bg-[#FFD02B] text-[15px] font-extrabold uppercase tracking-wider text-black transition active:scale-[0.98] tap-active disabled:opacity-60"
+        >
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <span className="h-4 w-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+              <span>Connecting…</span>
+            </div>
+          ) : (
+            'Continue with Telegram'
+          )}
+        </button>
 
-          {/* Bottom Disclaimer */}
-          <p className="mx-auto max-w-[280px] text-center text-[12px] leading-relaxed text-neutral-400 font-medium shrink-0">
-            We only use your Telegram name and photo to personalize your experience.
-          </p>
-        </div>
+        {/* Bottom Disclaimer with slightly adjusted top spacing for reasonable separation */}
+        <p className="mx-auto mt-6 max-w-[300px] text-center text-[12px] leading-relaxed text-neutral-400 font-medium">
+          We only use your Telegram name and photo to personalize your experience.
+        </p>
       </div>
     </div>
   );
