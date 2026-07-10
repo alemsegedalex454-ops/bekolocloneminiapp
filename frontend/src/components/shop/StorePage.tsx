@@ -175,7 +175,7 @@ export default function StorePage({ navigate }: StorePageProps) {
       </header>
 
       {/* Grid */}
-      <main className="px-4 pt-6 pb-10">
+      <main className="px-4 pt-12 pb-10">
         <div className="grid grid-cols-2 gap-3">
           {products.map((p) => (
             <ProductCard

@@ -85,7 +85,7 @@ export default function ProductDetail({ slug, navigate, goBack }: ProductDetailP
   }
 
   return (
-    <div className="min-h-screen bg-[#F9F9FB] pb-32">
+    <div className="fixed inset-0 z-50 bg-[#F9F9FB] overflow-y-auto pb-36 no-scrollbar">
       {/* Top bar */}
       <div className="sticky top-0 z-20 flex items-center justify-between bg-[#F9F9FB]/90 px-4 py-3 backdrop-blur-md">
         <button
