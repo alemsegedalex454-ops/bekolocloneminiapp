@@ -6,16 +6,16 @@ import { useTelegram } from '@/providers/TelegramProvider';
 import { hapticFeedback } from '@/lib/telegram';
 import api from '@/lib/api';
 
-/* ---------- Bekollo wordmark with smiley-sun "o" ---------- */
-function BekolloLogo({ size = 32 }: { size?: number }) {
+/* ---------- Summitet wordmark with smiley-sun "i" ---------- */
+function SummitetLogo({ size = 32 }: { size?: number }) {
   return (
     <div className="flex items-center gap-0" style={{ fontSize: size }}>
       <span className="font-extrabold tracking-tight text-black leading-none">
-        Bek
+        Summ
       </span>
       <SmileySun size={size * 1.05} />
       <span className="font-extrabold tracking-tight text-black leading-none">
-        llo
+        tet
       </span>
     </div>
   );
@@ -84,7 +84,7 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
       {/* Faded backdrop logo */}
       <div className="pointer-events-none absolute inset-x-0 top-[18%] flex justify-center opacity-30">
         <div className="scale-[2.2] grayscale">
-          <BekolloLogo size={40} />
+          <SummitetLogo size={40} />
         </div>
       </div>
 
@@ -95,19 +95,19 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
 
         {/* Logo */}
         <div className="mb-5 flex justify-center">
-          <BekolloLogo size={30} />
+          <SummitetLogo size={30} />
         </div>
 
         {/* Greeting */}
         <h1 className="text-center text-[22px] font-bold text-black flex items-center justify-center gap-1">
           Welcome, {displayName} <span className="text-[22px]">🌞</span>
         </h1>
-        <p className="mx-auto mt-2 max-w-[300px] text-center text-[14px] leading-relaxed text-neutral-500">
+        <p className="mx-auto mt-5 max-w-[300px] text-center text-[14px] leading-relaxed text-neutral-500">
           Continue with your Telegram account to shop, save items, and track your orders.
         </p>
 
         {/* User card */}
-        <div className="mt-6 flex items-center gap-3 rounded-2xl bg-white p-3 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-[#EBEBEB]">
+        <div className="mt-10 flex items-center gap-3 rounded-2xl bg-white p-3 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-[#EBEBEB]">
           {user?.photo_url ? (
             <img
               src={user.photo_url}
@@ -140,12 +140,12 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
         <button
           onClick={handleContinue}
           disabled={loading}
-          className="mt-5 flex h-[54px] w-full items-center justify-center rounded-full bg-[#FFD02B] text-[15px] font-extrabold uppercase tracking-wider text-black transition active:scale-[0.98] tap-active disabled:opacity-60"
+          className="mt-10 flex h-[54px] w-full items-center justify-center rounded-full bg-[#FFD02B] text-[15px] font-extrabold uppercase tracking-wider text-black transition active:scale-[0.98] tap-active disabled:opacity-60"
         >
           {loading ? 'Connecting…' : 'Continue with Telegram'}
         </button>
 
-        <p className="mx-auto mt-4 max-w-[300px] text-center text-[12px] leading-relaxed text-neutral-400">
+        <p className="mx-auto mt-8 max-w-[300px] text-center text-[12px] leading-relaxed text-neutral-400">
           We only use your Telegram name and photo to personalize your experience.
         </p>
       </div>

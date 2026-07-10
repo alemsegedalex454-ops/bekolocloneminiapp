@@ -2,19 +2,30 @@
 
 import React from 'react';
 
-export function BekolloLogo({ className = "" }: { className?: string }) {
+export function SummitetLogo({ className = "", size }: { className?: string; size?: number }) {
+  const sizeStyle = size ? { fontSize: size } : {};
   return (
-    <div className={`flex items-center ${className}`}>
-      <span className="text-[26px] font-extrabold tracking-tight text-black leading-none">Bek</span>
-      <SmileySun className="mx-[1px] h-[26px] w-[26px]" />
-      <span className="text-[26px] font-extrabold tracking-tight text-black leading-none">llo</span>
+    <div className={`flex items-center ${className}`} style={sizeStyle}>
+      <span className="text-[26px] font-extrabold tracking-tight text-black leading-none">Summ</span>
+      <SmileySun className="mx-[1px] h-[26px] w-[26px]" size={size} />
+      <span className="text-[26px] font-extrabold tracking-tight text-black leading-none">tet</span>
     </div>
   );
 }
 
-function SmileySun({ className = "" }: { className?: string }) {
+// Keep alias to avoid immediate breaking
+export { SummitetLogo as BekolloLogo };
+
+function SmileySun({ className = "", size }: { className?: string; size?: number }) {
+  const dimensions = size ? { width: size * 0.85, height: size * 0.85 } : {};
   return (
-    <svg viewBox="0 0 40 40" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg 
+      viewBox="0 0 40 40" 
+      className={className} 
+      style={dimensions}
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg"
+    >
       {/* rays */}
       <g stroke="#FFD02B" strokeWidth="2.2" strokeLinecap="round">
         <line x1="20" y1="2"  x2="20" y2="6" />

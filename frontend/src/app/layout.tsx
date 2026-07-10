@@ -3,7 +3,7 @@ import Script from 'next/script';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Bekollo | ዋጋው! Online Shop',
+  title: 'Summitet | ዋጋው! Online Shop',
   description: 'Experience a faster, easier way to shop. Browse our latest products, securely add items to your cart, and complete your checkout without ever leaving Telegram.',
   keywords: ['shopping', 'telegram', 'mini app', 'e-commerce', 'online store'],
 };

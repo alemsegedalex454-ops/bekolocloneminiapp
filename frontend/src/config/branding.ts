@@ -7,9 +7,9 @@
 
 export const branding = {
   // Store identity
-  storeName: 'Bekollo',
+  storeName: 'Summitet',
   storeTagline: 'ዋጋው! Online Shop',
-  botUsername: '@bekollo_bot',
+  botUsername: '@summitet_bot',
   welcomeEmoji: '🤩',
   
   // Welcome screen

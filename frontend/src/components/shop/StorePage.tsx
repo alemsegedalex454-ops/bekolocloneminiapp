@@ -7,7 +7,7 @@ import { useTelegram } from '@/providers/TelegramProvider';
 import api from '@/lib/api';
 import { Product, Category } from '@/types';
 import ProductCard from './ProductCard';
-import { BekolloLogo } from './BekolloLogo';
+import { SummitetLogo } from './BekolloLogo';
 import { hapticFeedback } from '@/lib/telegram';
 import { branding } from '@/config/branding';
 import type { Screen } from './ShopApp';
@@ -104,7 +104,7 @@ export default function StorePage({ navigate }: StorePageProps) {
       {/* Sticky header */}
       <header className="sticky top-0 z-30 bg-[#F9F9FB]/95 backdrop-blur px-4 pt-4 pb-3 border-b border-[#EBEBEB]">
         <div className="flex items-center justify-between">
-          <BekolloLogo />
+          <SummitetLogo />
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
