@@ -60,9 +60,9 @@ interface WelcomeScreenProps {
 export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
   const { user, isReady } = useTelegram();
 
-  const displayName = user?.first_name || 'Guest';
-  const username = user?.username ? `@${user.username}` : '';
-  const initial = displayName.charAt(0).toUpperCase();
+  const displayName = user?.first_name || 'በትረማርያም';
+  const username = user?.username ? `@${user.username}` : '@Betremariam';
+  const initial = displayName.charAt(0);
 
   const [loading, setLoading] = useState(false);
 
@@ -91,7 +91,7 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
       {/* Bottom sheet */}
       <div className="absolute inset-x-0 bottom-0 rounded-t-[28px] bg-[#F9F9FB] px-6 pb-8 pt-3 shadow-[0_-8px_40px_rgba(0,0,0,0.25)]">
         {/* Drag handle */}
-        <div className="mx-auto mb-6 h-1.5 w-10 rounded-full bg-black/15" />
+        <div className="mx-auto mb-6 h-1 w-12 rounded-full bg-neutral-300" />
 
         {/* Logo */}
         <div className="mb-5 flex justify-center">
@@ -99,46 +99,46 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
         </div>
 
         {/* Greeting */}
-        <h1 className="text-center text-[22px] font-bold text-black">
-          Welcome, {displayName} <span className="ml-1">🤩</span>
+        <h1 className="text-center text-[22px] font-bold text-black flex items-center justify-center gap-1">
+          Welcome, {displayName} <span className="text-[22px]">🌞</span>
         </h1>
         <p className="mx-auto mt-2 max-w-[300px] text-center text-[14px] leading-relaxed text-neutral-500">
           Continue with your Telegram account to shop, save items, and track your orders.
         </p>
 
         {/* User card */}
-        {isReady && (
-          <div className="mt-6 flex items-center gap-3 rounded-2xl bg-white p-3 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-[#EBEBEB]">
-            {user?.photo_url ? (
-              <img
-                src={user.photo_url}
-                alt={displayName}
-                className="h-11 w-11 rounded-full object-cover"
-              />
-            ) : (
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 text-white font-semibold">
-                {initial}
-              </div>
-            )}
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[15px] font-semibold text-black">
-                {displayName}
-              </p>
-              {username && (
-                <p className="truncate text-[13px] text-neutral-500">
-                  {username}
-                </p>
-              )}
+        <div className="mt-6 flex items-center gap-3 rounded-2xl bg-white p-3 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-[#EBEBEB]">
+          {user?.photo_url ? (
+            <img
+              src={user.photo_url}
+              alt={displayName}
+              className="h-11 w-11 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-tr from-[#5E5CE6] to-[#007AFF] text-white font-semibold text-lg">
+              {initial}
             </div>
-            <ShieldCheck className="h-5 w-5 text-emerald-500" />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[15px] font-semibold text-black">
+              {displayName}
+            </p>
+            <p className="truncate text-[13px] text-neutral-500">
+              {username}
+            </p>
           </div>
-        )}
+          <div className="flex h-5 w-5 items-center justify-center rounded-full border border-emerald-500 text-emerald-500 bg-emerald-50/50">
+            <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+        </div>
 
         {/* CTA */}
         <button
           onClick={handleContinue}
           disabled={loading}
-          className="mt-5 flex h-[54px] w-full items-center justify-center rounded-full bg-[#FFD02B] text-[15px] font-bold uppercase tracking-wide text-black transition active:scale-[0.98] tap-active disabled:opacity-60"
+          className="mt-5 flex h-[54px] w-full items-center justify-center rounded-full bg-[#FFD02B] text-[15px] font-extrabold uppercase tracking-wider text-black transition active:scale-[0.98] tap-active disabled:opacity-60"
         >
           {loading ? 'Connecting…' : 'Continue with Telegram'}
         </button>
