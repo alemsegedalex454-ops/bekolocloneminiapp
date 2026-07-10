@@ -148,15 +148,15 @@ body {
 @keyframes logoFloatAndPulse {
   0% {
     transform: translateY(0) scale(1);
-    opacity: 0.20;
+    opacity: 0.65;
   }
   50% {
     transform: translateY(-6px) scale(1.015);
-    opacity: 0.28;
+    opacity: 0.85;
   }
   100% {
     transform: translateY(0) scale(1);
-    opacity: 0.20;
+    opacity: 0.65;
   }
 }
 

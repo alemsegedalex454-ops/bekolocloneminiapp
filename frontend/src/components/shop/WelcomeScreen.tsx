@@ -38,9 +38,9 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
       <div className="absolute top-[5%] left-[-15%] w-[320px] h-[320px] rounded-full bg-[#FFD02B]/6 blur-[120px] pointer-events-none animate-pulse duration-[8000ms]" />
       <div className="absolute top-[25%] right-[-15%] w-[300px] h-[300px] rounded-full bg-white/5 blur-[100px] pointer-events-none animate-pulse duration-[10000ms]" />
 
-      {/* Main backdrop watermark logo - elegant white text on dark backdrop */}
+      {/* Main backdrop watermark logo - elegant yellow text on dark backdrop */}
       <div className="pointer-events-none absolute inset-x-0 top-[18%] flex flex-col items-center justify-center select-none scale-[1.3] sm:scale-[1.6] duration-700 animate-logo-watermark">
-        <SummitetLogo light={true} size={42} />
+        <SummitetLogo yellow={true} size={42} />
       </div>
 
       {/* Pop-up bottom sheet with smooth slide-up animation and flex gaps for perfect mobile spacing */}
