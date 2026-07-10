@@ -33,88 +33,90 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#235D65]">
-      {/* Futuristic ambient glow effects */}
-      <div className="absolute top-[5%] left-[-15%] w-[320px] h-[320px] rounded-full bg-[#FFD02B]/8 blur-[120px] pointer-events-none animate-pulse duration-[8000ms]" />
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#132F33]">
+      {/* Futuristic elegant ambient glow effects */}
+      <div className="absolute top-[5%] left-[-15%] w-[320px] h-[320px] rounded-full bg-[#FFD02B]/6 blur-[120px] pointer-events-none animate-pulse duration-[8000ms]" />
       <div className="absolute top-[25%] right-[-15%] w-[300px] h-[300px] rounded-full bg-white/5 blur-[100px] pointer-events-none animate-pulse duration-[10000ms]" />
 
-      {/* Main backdrop watermark logo - clearly visible on dark background */}
-      <div className="pointer-events-none absolute inset-x-0 top-[18%] flex flex-col items-center justify-center opacity-[0.35] select-none scale-[1.3] sm:scale-[1.6] duration-700">
-        <SummitetLogo yellow={true} size={42} />
+      {/* Main backdrop watermark logo - elegant white text on dark backdrop */}
+      <div className="pointer-events-none absolute inset-x-0 top-[18%] flex flex-col items-center justify-center opacity-[0.25] select-none scale-[1.3] sm:scale-[1.6] duration-700">
+        <SummitetLogo light={true} size={42} />
       </div>
 
-      {/* Pop-up bottom sheet with smooth slide-up animation */}
-      <div className="absolute inset-x-0 bottom-0 rounded-t-[28px] bg-[#F9F9FB] px-6 pb-8 pt-3 shadow-[0_-8px_40px_rgba(0,0,0,0.25)] animate-slide-up z-20">
+      {/* Pop-up bottom sheet with smooth slide-up animation and flex gaps for perfect mobile spacing */}
+      <div className="fixed inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto no-scrollbar rounded-t-[30px] bg-white px-6 pb-10 pt-4 shadow-[0_-10px_45px_rgba(0,0,0,0.35)] border-t border-white/10 animate-slide-up z-20 flex flex-col gap-6">
         
         {/* Drag handle */}
-        <div className="mx-auto mb-6 h-1.5 w-10 rounded-full bg-black/15" />
+        <div className="mx-auto h-1.5 w-12 rounded-full bg-neutral-200 shrink-0" />
 
         {/* Logo inside sheet */}
-        <div className="mb-5 flex justify-center">
-          <SummitetLogo size={30} />
+        <div className="flex justify-center shrink-0">
+          <SummitetLogo size={28} />
         </div>
 
-        {/* Greeting */}
-        <h1 className="text-center text-[22px] font-bold text-black flex items-center justify-center gap-1">
-          Welcome, <span className="text-[#235D65]">{displayName}</span> <span className="text-[22px]">🌞</span>
-        </h1>
-        
-        {/* Subtitle */}
-        <p className="mx-auto mt-2 max-w-[300px] text-center text-[14px] leading-relaxed text-neutral-500">
-          Continue with your Telegram account to shop, save items, and track your orders.
-        </p>
+        {/* Greeting & Subtitle Container with vertical spacing */}
+        <div className="text-center flex flex-col gap-3">
+          <h1 className="text-[22px] font-bold text-black flex items-center justify-center gap-1.5">
+            Welcome, <span className="text-[#132F33] font-extrabold">{displayName}</span> <span className="text-[22px] animate-bounce">🌞</span>
+          </h1>
+          <p className="mx-auto max-w-[300px] text-[14px] leading-relaxed text-neutral-500 font-medium">
+            Continue with your Telegram account to shop, save items, and track your orders.
+          </p>
+        </div>
 
-        {/* User card wrapper */}
-        <div className="mt-6 flex items-center gap-3 rounded-2xl bg-white p-3 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-[#EBEBEB]">
+        {/* User card wrapper with flex stacking to prevent name overlap */}
+        <div className="flex items-center gap-3.5 rounded-2xl bg-[#F9F9FB] p-4 border border-[#EBEBEB] shrink-0">
           {user?.photo_url ? (
             <img
               src={user.photo_url}
               alt={displayName}
-              className="h-11 w-11 rounded-full object-cover"
+              className="h-11 w-11 rounded-full object-cover shrink-0"
             />
           ) : (
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-tr from-[#5E5CE6] to-[#007AFF] text-white font-semibold text-lg">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-tr from-[#5E5CE6] to-[#007AFF] text-white font-semibold text-lg shrink-0">
               {initial}
             </div>
           )}
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[15px] font-semibold text-black">
+          <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+            <p className="truncate text-[15px] font-semibold text-black leading-tight">
               {displayName}
             </p>
             {username && (
-              <p className="truncate text-[13px] text-neutral-500">
+              <p className="truncate text-[13px] text-neutral-500 leading-tight">
                 {username}
               </p>
             )}
           </div>
           {/* Emerald check verified bubble */}
-          <div className="flex h-5 w-5 items-center justify-center rounded-full border border-emerald-500 text-emerald-500 bg-emerald-50/50 shrink-0">
+          <div className="flex h-6 w-6 items-center justify-center rounded-full border border-emerald-500 text-emerald-500 bg-emerald-50/50 shrink-0">
             <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
         </div>
 
-        {/* CTA Button */}
-        <button
-          onClick={handleContinue}
-          disabled={loading}
-          className="mt-5 flex h-[54px] w-full items-center justify-center rounded-full bg-[#FFD02B] text-[15px] font-extrabold uppercase tracking-wider text-black transition active:scale-[0.98] tap-active disabled:opacity-60"
-        >
-          {loading ? (
-            <div className="flex items-center gap-2">
-              <span className="h-4 w-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-              <span>Connecting…</span>
-            </div>
-          ) : (
-            'Continue with Telegram'
-          )}
-        </button>
+        {/* CTA Button & Bottom Disclaimer container */}
+        <div className="flex flex-col gap-5 shrink-0 mt-2">
+          <button
+            onClick={handleContinue}
+            disabled={loading}
+            className="flex h-[54px] w-full items-center justify-center rounded-full bg-[#FFD02B] text-[15px] font-extrabold uppercase tracking-wider text-black transition active:scale-[0.98] tap-active disabled:opacity-60 shrink-0"
+          >
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <span className="h-4 w-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                <span>Connecting…</span>
+              </div>
+            ) : (
+              'Continue with Telegram'
+            )}
+          </button>
 
-        {/* Bottom Disclaimer with slightly adjusted top spacing for reasonable separation */}
-        <p className="mx-auto mt-6 max-w-[300px] text-center text-[12px] leading-relaxed text-neutral-400 font-medium">
-          We only use your Telegram name and photo to personalize your experience.
-        </p>
+          <p className="mx-auto max-w-[300px] text-center text-[12px] leading-relaxed text-neutral-400 font-medium">
+            We only use your Telegram name and photo to personalize your experience.
+          </p>
+        </div>
+
       </div>
     </div>
   );
