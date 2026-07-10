@@ -1,28 +1,23 @@
 {
-  "services": {
-    "frontend": {
-      "root": "frontend",
-      "framework": "nextjs"
+  "version": 2,
+  "builds": [
+    {
+      "src": "backend/src/index.ts",
+      "use": "@vercel/node"
     },
-    "backend": {
-      "root": "backend",
-      "entrypoint": "index.js"
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/next"
     }
-  },
-  "rewrites": [
+  ],
+  "routes": [
     {
-      "source": "/api/:path*",
-      "destination": {
-        "type": "service",
-        "service": "backend"
-      }
+      "src": "/api/(.*)",
+      "dest": "backend/src/index.ts"
     },
     {
-      "source": "/(.*)",
-      "destination": {
-        "type": "service",
-        "service": "frontend"
-      }
+      "src": "/(.*)",
+      "dest": "frontend/$1"
     }
   ]
 }
