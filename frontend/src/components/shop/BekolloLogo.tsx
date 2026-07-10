@@ -2,52 +2,34 @@
 
 import React from 'react';
 
-export function SummitIcon({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
-  return (
-    <svg 
-      viewBox="0 0 40 40" 
-      className={className} 
-      style={style}
-      fill="none" 
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {/* Left peak slope */}
-      <path 
-        d="M8 28L20 8L32 28" 
-        stroke="url(#summitGradient)" 
-        strokeWidth="3.5" 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-      />
-      {/* Inner nested peak */}
-      <path 
-        d="M14 28L20 18L26 28" 
-        stroke="#1A1A1A" 
-        strokeWidth="2.5" 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-      />
-      {/* Peak glow dot / star */}
-      <circle cx="20" cy="5" r="2.5" fill="#FFD02B" />
-      <defs>
-        <linearGradient id="summitGradient" x1="8" y1="8" x2="32" y2="28" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#FFD02B" />
-          <stop stopColor="#FF9500" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
-
-export function SummitetLogo({ className = "", size }: { className?: string; size?: number }) {
-  const sizeStyle = size ? { fontSize: size } : {};
-  const iconSizeClass = size ? `h-[${size * 0.9}px] w-[${size * 0.9}px]` : "h-7 w-7";
+export function SummitetLogo({ 
+  className = "", 
+  size = 28, 
+  align = "center",
+  light = false
+}: { 
+  className?: string; 
+  size?: number; 
+  align?: "left" | "center";
+  light?: boolean;
+}) {
+  const isLeft = align === "left";
+  const titleSize = size;
+  const subtitleSize = Math.max(7, Math.floor(size * 0.32));
   
   return (
-    <div className={`flex items-center gap-2 ${className}`} style={sizeStyle}>
-      <SummitIcon className={iconSizeClass} />
-      <span className="font-extrabold tracking-tight text-black leading-none" style={size ? { fontSize: size } : { fontSize: '24px' }}>
-        Summitet
+    <div className={`flex flex-col ${isLeft ? "items-start text-left" : "items-center text-center"} select-none ${className}`}>
+      <span 
+        className={`font-black tracking-widest leading-none ${light ? 'text-white' : 'text-black'}`}
+        style={{ fontSize: titleSize, fontFamily: "'Inter', sans-serif" }}
+      >
+        SUMMITET
+      </span>
+      <span 
+        className={`font-bold tracking-[0.28em] leading-none mt-1.5 ${light ? 'text-neutral-400/80' : 'text-neutral-400'}`}
+        style={{ fontSize: subtitleSize, fontFamily: "'Inter', sans-serif" }}
+      >
+        GLORIOUS PEAK
       </span>
     </div>
   );

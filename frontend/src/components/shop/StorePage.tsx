@@ -104,7 +104,7 @@ export default function StorePage({ navigate }: StorePageProps) {
       {/* Sticky header */}
       <header className="sticky top-0 z-30 bg-[#F9F9FB]/95 backdrop-blur px-4 pt-4 pb-3 border-b border-[#EBEBEB]">
         <div className="flex items-center justify-between">
-          <SummitetLogo />
+          <SummitetLogo align="left" size={20} />
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
