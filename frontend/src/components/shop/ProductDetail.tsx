@@ -1,13 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { branding } from '@/config/branding';
-import { formatPrice } from '@/lib/telegram';
-import { useCart } from '@/providers/CartProvider';
-import api from '@/lib/api';
+import { Minus, Plus, ChevronLeft, Heart } from 'lucide-react';
 import type { Product } from '@/types';
+import { useCart } from '@/providers/CartProvider';
+import { formatPrice, hapticFeedback } from '@/lib/telegram';
+import api from '@/lib/api';
 import type { Screen } from './ShopApp';
-import ProductCard from './ProductCard';
 
 interface ProductDetailProps {
   slug: string;
@@ -16,23 +15,33 @@ interface ProductDetailProps {
 }
 
 export default function ProductDetail({ slug, navigate, goBack }: ProductDetailProps) {
-  const { addToCart, loading: cartLoading } = useCart();
+  const { addToCart } = useCart();
+
   const [product, setProduct] = useState<Product | null>(null);
-  const [related, setRelated] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedSize, setSelectedSize] = useState<string>('');
-  const [selectedColor, setSelectedColor] = useState<string>('');
-  const [quantity, setQuantity] = useState(1);
-  const [currentImage, setCurrentImage] = useState(0);
+  const [activeImage, setActiveImage] = useState(0);
+  const [size, setSize] = useState('');
+  const [color, setColor] = useState('');
+  const [qty, setQty] = useState(1);
+  const [adding, setAdding] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     api.get(`/products/${slug}`)
       .then(({ data }) => {
         setProduct(data.product);
-        setRelated(data.related || []);
-        if (data.product.sizes?.length) setSelectedSize(data.product.sizes[0]);
-        if (data.product.colors?.length) setSelectedColor(data.product.colors[0].name);
+        if (data.product.sizes?.length) setSize(data.product.sizes[0]);
+        if (data.product.colors?.length) setColor(data.product.colors[0].name);
+        
+        // Check if wishlisted
+        api.get('/users/wishlist/ids')
+          .then((r) => {
+            const ids = r.data?.productIds ?? [];
+            setIsWishlisted(ids.includes(data.product.id));
+          })
+          .catch(() => {});
+
         // Track recently viewed
         api.post('/users/recently-viewed', { productId: data.product.id }).catch(() => {});
       })
@@ -40,212 +49,235 @@ export default function ProductDetail({ slug, navigate, goBack }: ProductDetailP
       .finally(() => setLoading(false));
   }, [slug]);
 
-  const handleAddToCart = async () => {
+  const toggleWishlist = async () => {
     if (!product) return;
-    await addToCart(product.id, quantity, selectedSize, selectedColor);
+    hapticFeedback('selection');
+    // optimistic update
+    setIsWishlisted((prev) => !prev);
+    try {
+      await api.post('/users/wishlist', { productId: product.id });
+    } catch {
+      // rollback
+      setIsWishlisted((prev) => !prev);
+    }
+  };
+
+  const handleAdd = async () => {
+    if (!product || adding || product.stock <= 0) return;
+    setAdding(true);
+    hapticFeedback('notification');
+    try {
+      await addToCart(product.id, qty, size, color);
+    } finally {
+      setAdding(false);
+    }
   };
 
   if (loading || !product) {
     return (
-      <div className="min-h-screen bg-white">
-        <div className="p-4">
-          <button onClick={goBack} className="mb-4 tap-active">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={branding.colors.text} strokeWidth="2">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-          </button>
-        </div>
-        <div className="aspect-square skeleton mx-4 rounded-2xl" />
-        <div className="p-4 space-y-3">
-          <div className="h-6 skeleton w-3/4" />
-          <div className="h-8 skeleton w-1/3" />
-          <div className="h-4 skeleton w-full" />
-          <div className="h-4 skeleton w-2/3" />
+      <div className="min-h-screen flex items-center justify-center bg-[#F9F9FB]">
+        <div className="text-center">
+          <div className="w-8 h-8 border-3 border-[#FFD02B] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-gray-400">Loading...</p>
         </div>
       </div>
     );
   }
 
-  const images = Array.isArray(product.images) ? product.images : [];
-
   return (
-    <div className="min-h-screen bg-white pb-24">
-      {/* Back button */}
-      <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm px-4 py-3 flex items-center justify-between border-b"
-        style={{ borderColor: branding.colors.border }}>
-        <button onClick={goBack} className="tap-active p-1">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={branding.colors.text} strokeWidth="2" strokeLinecap="round">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
+    <div className="min-h-screen bg-[#F9F9FB] pb-32">
+      {/* Top bar */}
+      <div className="sticky top-0 z-20 flex items-center justify-between bg-[#F9F9FB]/90 px-4 py-3 backdrop-blur-md">
+        <button
+          onClick={() => {
+            hapticFeedback('impact');
+            goBack();
+          }}
+          className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm hover:brightness-95 transition-all tap-active"
+          aria-label="Back"
+        >
+          <ChevronLeft size={20} className="text-[#1A1A1A]" />
         </button>
-        <h2 className="text-sm font-semibold truncate max-w-[200px]" style={{ color: branding.colors.text }}>
-          {product.name}
-        </h2>
-        <button onClick={() => navigate({ name: 'cart' })} className="tap-active p-1">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={branding.colors.text} strokeWidth="2">
-            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <path d="M16 10a4 4 0 01-8 0" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Image Gallery */}
-      <div className="relative">
-        <div className="aspect-square bg-gray-50 overflow-hidden">
-          <img
-            src={images[currentImage] || '/placeholder.png'}
-            alt={product.name}
-            className="w-full h-full object-cover"
+        <button
+          onClick={toggleWishlist}
+          className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm hover:brightness-95 transition-all tap-active"
+          aria-label="Wishlist"
+        >
+          <Heart
+            size={18}
+            className="text-[#1A1A1A]"
+            fill={isWishlisted ? '#EF4444' : 'none'}
+            stroke={isWishlisted ? '#EF4444' : '#1A1A1A'}
           />
-        </div>
-        {/* Image dots */}
-        {images.length > 1 && (
-          <div className="flex gap-1.5 justify-center py-3">
-            {images.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentImage(i)}
-                className="w-2 h-2 rounded-full transition-all"
-                style={{
-                  backgroundColor: i === currentImage ? branding.colors.primary : branding.colors.border,
-                  transform: i === currentImage ? 'scale(1.3)' : 'scale(1)',
-                }}
-              />
-            ))}
-          </div>
-        )}
+        </button>
       </div>
 
-      {/* Product Info */}
-      <div className="px-4 pt-4">
-        <h1 className="text-xl font-bold mb-2" style={{ color: branding.colors.text }}>
-          {product.name}
-        </h1>
-
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-2xl font-bold" style={{ color: branding.colors.text }}>
-            {formatPrice(product.price)}
-          </span>
-          {product.comparePrice && product.comparePrice > product.price && (
-            <span className="text-base line-through" style={{ color: branding.colors.textMuted }}>
-              {formatPrice(product.comparePrice)}
-            </span>
+      {/* Gallery */}
+      <div className="mx-auto max-w-2xl px-4">
+        <div className="relative aspect-[3/4] w-full overflow-hidden rounded-3xl bg-white border border-[#EBEBEB] shadow-sm">
+          {product.images?.[activeImage] && (
+            <img
+              src={product.images[activeImage]}
+              alt={product.name}
+              className="w-full h-full object-cover"
+            />
           )}
         </div>
 
+        {product.images?.length > 1 && (
+          <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar">
+            {product.images.map((src, i) => (
+              <button
+                key={src}
+                onClick={() => setActiveImage(i)}
+                className={
+                  'relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition-colors tap-active ' +
+                  (i === activeImage ? 'border-[#1A1A1A]' : 'border-transparent')
+                }
+              >
+                <img src={src} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Info */}
+        <div className="mt-6 flex items-start justify-between gap-4">
+          <h1 className="text-2xl font-bold leading-tight text-[#1A1A1A]">
+            {product.name}
+          </h1>
+          <div className="text-right shrink-0">
+            {product.comparePrice && product.comparePrice > product.price && (
+              <div className="text-xs text-[#9CA3AF] line-through">
+                {formatPrice(product.comparePrice)}
+              </div>
+            )}
+            <div className="text-xl font-bold text-[#1A1A1A]">
+              {formatPrice(product.price)}
+            </div>
+          </div>
+        </div>
+
         {product.description && (
-          <p className="text-sm leading-relaxed mb-6" style={{ color: branding.colors.textSecondary }}>
+          <p className="mt-3 text-sm leading-relaxed text-[#6B7280]">
             {product.description}
           </p>
         )}
 
-        {/* Size Selection */}
-        {product.sizes && product.sizes.length > 0 && (
-          <div className="mb-5">
-            <h3 className="text-sm font-semibold mb-2" style={{ color: branding.colors.text }}>Size</h3>
-            <div className="flex gap-2 flex-wrap">
-              {product.sizes.map((size: string) => (
-                <button
-                  key={size}
-                  onClick={() => setSelectedSize(size)}
-                  className="px-4 py-2 rounded-lg text-sm font-medium transition-all tap-active"
-                  style={{
-                    backgroundColor: selectedSize === size ? branding.colors.secondary : branding.colors.surface,
-                    color: selectedSize === size ? '#FFFFFF' : branding.colors.text,
-                    border: `1px solid ${selectedSize === size ? branding.colors.secondary : branding.colors.border}`,
-                  }}
-                >
-                  {size}
-                </button>
-              ))}
+        {/* Sizes */}
+        {product.sizes?.length > 0 && (
+          <section className="mt-6">
+            <h2 className="mb-3 text-sm font-semibold text-[#1A1A1A]">Size</h2>
+            <div className="flex flex-wrap gap-2">
+              {product.sizes.map((s) => {
+                const active = s === size;
+                return (
+                  <button
+                    key={s}
+                    onClick={() => {
+                      hapticFeedback('selection');
+                      setSize(s);
+                    }}
+                    className={
+                      'min-w-[48px] rounded-full px-4 py-2.5 text-sm font-semibold transition-colors tap-active ' +
+                      (active
+                        ? 'bg-[#1A1A1A] text-white'
+                        : 'border border-[#EEEEEE] bg-white text-[#1A1A1A] hover:border-[#1A1A1A]/20')
+                    }
+                  >
+                    {s}
+                  </button>
+                );
+              })}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Color Selection */}
-        {product.colors && product.colors.length > 0 && (
-          <div className="mb-5">
-            <h3 className="text-sm font-semibold mb-2" style={{ color: branding.colors.text }}>
-              Color: {selectedColor}
-            </h3>
-            <div className="flex gap-2.5 flex-wrap">
-              {product.colors.map((color: any) => (
-                <button
-                  key={color.name}
-                  onClick={() => setSelectedColor(color.name)}
-                  className="w-9 h-9 rounded-full transition-all tap-active"
-                  style={{
-                    backgroundColor: color.hex,
-                    border: selectedColor === color.name
-                      ? `3px solid ${branding.colors.secondary}`
-                      : '2px solid #E5E7EB',
-                    transform: selectedColor === color.name ? 'scale(1.1)' : 'scale(1)',
-                  }}
-                />
-              ))}
+        {/* Colors */}
+        {product.colors?.length > 0 && (
+          <section className="mt-6">
+            <h2 className="mb-3 text-sm font-semibold text-[#1A1A1A]">
+              Color <span className="font-normal text-[#9CA3AF]">· {color}</span>
+            </h2>
+            <div className="flex flex-wrap gap-3">
+              {product.colors.map((c) => {
+                const active = c.name === color;
+                return (
+                  <button
+                    key={c.name}
+                    onClick={() => {
+                      hapticFeedback('selection');
+                      setColor(c.name);
+                    }}
+                    aria-label={c.name}
+                    className={
+                      'grid h-10 w-10 place-items-center rounded-full transition-transform tap-active ' +
+                      (active
+                        ? 'ring-2 ring-[#1A1A1A] ring-offset-2 ring-offset-[#F9F9FB]'
+                        : 'ring-1 ring-[#EEEEEE]')
+                    }
+                    style={{ backgroundColor: c.hex }}
+                  />
+                );
+              })}
             </div>
-          </div>
+          </section>
         )}
 
         {/* Quantity */}
-        <div className="mb-6">
-          <h3 className="text-sm font-semibold mb-2" style={{ color: branding.colors.text }}>Quantity</h3>
-          <div className="flex items-center gap-3">
+        <section className="mt-6">
+          <h2 className="mb-3 text-sm font-semibold text-[#1A1A1A]">Quantity</h2>
+          <div className="inline-flex items-center gap-4 rounded-full border border-[#EEEEEE] bg-white p-1.5 shadow-sm">
             <button
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold tap-active"
-              style={{ backgroundColor: branding.colors.surface, color: branding.colors.text }}
+              onClick={() => {
+                if (qty > 1) {
+                  setQty(qty - 1);
+                  hapticFeedback('impact');
+                }
+              }}
+              className="grid h-9 w-9 place-items-center rounded-full bg-[#F9F9FB] text-[#1A1A1A] disabled:opacity-40 tap-active"
+              disabled={qty <= 1}
+              aria-label="Decrease"
             >
-              −
+              <Minus size={16} />
             </button>
-            <span className="text-lg font-semibold w-8 text-center">{quantity}</span>
-            <button
-              onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-              className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold tap-active"
-              style={{ backgroundColor: branding.colors.surface, color: branding.colors.text }}
-            >
-              +
-            </button>
-            <span className="text-xs ml-2" style={{ color: branding.colors.textMuted }}>
-              {product.stock} available
+            <span className="min-w-[24px] text-center text-sm font-bold text-[#1A1A1A]">
+              {qty}
             </span>
+            <button
+              onClick={() => {
+                if (qty < product.stock) {
+                  setQty(qty + 1);
+                  hapticFeedback('impact');
+                }
+              }}
+              className="grid h-9 w-9 place-items-center rounded-full bg-[#F9F9FB] text-[#1A1A1A] disabled:opacity-40 tap-active"
+              disabled={qty >= product.stock}
+              aria-label="Increase"
+            >
+              <Plus size={16} />
+            </button>
           </div>
-        </div>
-
-        {/* Related Products */}
-        {related.length > 0 && (
-          <div className="mt-8 mb-6">
-            <h3 className="text-base font-bold mb-3" style={{ color: branding.colors.text }}>
-              You may also like
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              {related.map((p) => (
-                <ProductCard
-                  key={p.id}
-                  product={p}
-                  onSelect={() => navigate({ name: 'product', slug: p.slug })}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+        </section>
       </div>
 
-      {/* Fixed Add to Cart */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 z-50"
-        style={{ borderColor: branding.colors.border }}>
-        <button
-          onClick={handleAddToCart}
-          disabled={cartLoading || product.stock === 0}
-          className="w-full py-3.5 rounded-xl text-[15px] font-bold transition-all tap-active disabled:opacity-50"
-          style={{
-            backgroundColor: branding.colors.primary,
-            color: branding.colors.primaryText,
-          }}
-        >
-          {cartLoading ? 'Adding...' : product.stock === 0 ? 'Out of Stock' : `Add to Cart — ${formatPrice(product.price * quantity)}`}
-        </button>
+      {/* Sticky bottom CTA */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#EEEEEE] bg-white/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
+          <div className="flex flex-col">
+            <span className="text-[11px] text-[#9CA3AF]">Total</span>
+            <span className="text-lg font-bold text-[#1A1A1A]">
+              {formatPrice(product.price * qty)}
+            </span>
+          </div>
+          <button
+            onClick={handleAdd}
+            disabled={adding || product.stock <= 0}
+            className="ml-auto inline-flex h-12 flex-1 items-center justify-center rounded-full bg-[#FFD02B] text-sm font-bold text-[#1A1A1A] transition-colors hover:bg-[#E5BA20] disabled:opacity-60 tap-active"
+          >
+            {product.stock <= 0 ? 'Out of stock' : adding ? 'Adding…' : 'Add to Cart'}
+          </button>
+        </div>
       </div>
     </div>
   );

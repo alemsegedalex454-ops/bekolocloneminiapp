@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { branding } from '@/config/branding';
-import { formatPrice } from '@/lib/telegram';
+import { ChevronLeft, Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/providers/CartProvider';
+import { formatPrice, hapticFeedback } from '@/lib/telegram';
 import type { Screen } from './ShopApp';
 
 interface CartPageProps {
@@ -12,140 +12,182 @@ interface CartPageProps {
 }
 
 export default function CartPage({ navigate, goBack }: CartPageProps) {
-  const { items, subtotal, total, updateQuantity, removeFromCart } = useCart();
+  const { items, count, subtotal, total, loading, updateQuantity, removeFromCart } =
+    useCart();
+
+  const handleCheckout = () => {
+    hapticFeedback('notification');
+    navigate({ name: 'checkout' });
+  };
 
   return (
-    <div className="min-h-screen bg-white pb-28">
+    <div className="min-h-screen bg-[#F9F9FB] pb-32">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-white border-b px-4 py-3 flex items-center gap-3"
-        style={{ borderColor: branding.colors.border }}>
-        <button onClick={goBack} className="tap-active p-1">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={branding.colors.text} strokeWidth="2" strokeLinecap="round">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
+      <header className="sticky top-0 z-20 flex items-center justify-between bg-[#F9F9FB]/90 px-4 py-3 backdrop-blur-md border-b border-[#EBEBEB]">
+        <button
+          onClick={() => {
+            hapticFeedback('impact');
+            goBack();
+          }}
+          className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm hover:brightness-95 transition-all tap-active"
+          aria-label="Back"
+        >
+          <ChevronLeft size={20} className="text-[#1A1A1A]" />
         </button>
-        <h2 className="text-lg font-bold" style={{ color: branding.colors.text }}>
-          Shopping Cart ({items.length})
-        </h2>
-      </div>
+        <h1 className="text-base font-bold text-[#1A1A1A]">
+          Your Cart {count > 0 && <span className="text-[#9CA3AF]">({count})</span>}
+        </h1>
+        <div className="h-10 w-10" />
+      </header>
 
-      {items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 px-4">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke={branding.colors.textMuted} strokeWidth="1.5" className="mb-4">
-            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <path d="M16 10a4 4 0 01-8 0" />
-          </svg>
-          <p className="text-lg font-semibold mb-1" style={{ color: branding.colors.textSecondary }}>
-            Your cart is empty
-          </p>
-          <p className="text-sm mb-6" style={{ color: branding.colors.textMuted }}>
-            Add some products to get started
-          </p>
-          <button
-            onClick={() => navigate({ name: 'store' })}
-            className="px-6 py-2.5 rounded-full text-sm font-semibold tap-active"
-            style={{
-              backgroundColor: branding.colors.primary,
-              color: branding.colors.primaryText,
-            }}
-          >
-            Continue Shopping
-          </button>
-        </div>
-      ) : (
-        <>
-          {/* Cart Items */}
-          <div className="divide-y" style={{ borderColor: branding.colors.border }}>
-            {items.map((item) => {
-              const image = Array.isArray(item.product.images) && item.product.images.length > 0
-                ? item.product.images[0]
-                : '/placeholder.png';
+      <main className="mx-auto max-w-2xl px-4 pt-4">
+        {loading && items.length === 0 && (
+          <p className="py-16 text-center text-sm text-[#9CA3AF]">Loading…</p>
+        )}
 
-              return (
-                <div key={item.id} className="px-4 py-4 flex gap-3 animate-fade-in">
-                  {/* Image */}
-                  <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-50 flex-shrink-0">
-                    <img src={image} alt={item.product.name} className="w-full h-full object-cover" />
-                  </div>
+        {!loading && items.length === 0 && (
+          <div className="flex flex-col items-center gap-4 py-24 text-center">
+            <div className="grid h-16 w-16 place-items-center rounded-full bg-white shadow-sm">
+              <ShoppingBag size={24} className="text-[#1A1A1A]" />
+            </div>
+            <div>
+              <p className="text-base font-semibold text-[#1A1A1A]">
+                Your cart is empty
+              </p>
+              <p className="mt-1 text-sm text-[#9CA3AF]">
+                Browse the shop and add your favorites.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                hapticFeedback('impact');
+                navigate({ name: 'store' });
+              }}
+              className="inline-flex h-11 items-center justify-center rounded-full bg-[#FFD02B] px-6 text-sm font-bold text-[#1A1A1A] hover:bg-[#E5BA20] transition-colors tap-active"
+            >
+              Continue shopping
+            </button>
+          </div>
+        )}
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium mb-1 truncate" style={{ color: branding.colors.text }}>
+        {items.length > 0 && (
+          <ul className="flex flex-col gap-3">
+            {items.map((item) => (
+              <li
+                key={item.id}
+                className="flex gap-3 rounded-3xl bg-white p-3 shadow-[0_1px_2px_rgba(16,24,40,0.04)] border border-[#EBEBEB]"
+              >
+                <div className="relative h-24 w-20 shrink-0 overflow-hidden rounded-2xl bg-[#F5F5F7] border border-[#EBEBEB]">
+                  {item.product.images?.[0] && (
+                    <img
+                      src={item.product.images[0]}
+                      alt={item.product.name}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
+
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="line-clamp-2 text-sm font-semibold text-[#1A1A1A] leading-snug">
                       {item.product.name}
                     </h3>
-                    
-                    <div className="flex gap-2 text-xs mb-2" style={{ color: branding.colors.textSecondary }}>
-                      {item.size && <span>Size: {item.size}</span>}
-                      {item.color && <span>Color: {item.color}</span>}
-                    </div>
-
-                    <p className="text-sm font-bold" style={{ color: branding.colors.text }}>
-                      {formatPrice(item.product.price)}
-                    </p>
+                    <button
+                      onClick={() => {
+                        hapticFeedback('notification');
+                        void removeFromCart(item.id);
+                      }}
+                      className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[#9CA3AF] transition-colors hover:bg-[#F9F9FB] hover:text-[#EF4444] tap-active"
+                      aria-label="Remove"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
 
-                  {/* Quantity & Remove */}
-                  <div className="flex flex-col items-end justify-between">
-                    <button
-                      onClick={() => removeFromCart(item.id)}
-                      className="tap-active p-1"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={branding.colors.textMuted} strokeWidth="2">
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                      </svg>
-                    </button>
+                  <p className="mt-1 text-xs text-[#6B7280]">
+                    {item.size && <span>Size {item.size}</span>}
+                    {item.size && item.color && <span> · </span>}
+                    {item.color && <span>{item.color}</span>}
+                  </p>
 
-                    <div className="flex items-center gap-2">
+                  <div className="mt-auto flex items-center justify-between pt-2">
+                    <div className="inline-flex items-center gap-3 rounded-full border border-[#EEEEEE] p-1 bg-white">
                       <button
-                        onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                        className="w-7 h-7 rounded-md flex items-center justify-center text-sm font-bold tap-active"
-                        style={{ backgroundColor: branding.colors.surface }}
+                        onClick={() => {
+                          if (item.quantity > 1) {
+                            hapticFeedback('impact');
+                            void updateQuantity(item.id, item.quantity - 1);
+                          }
+                        }}
+                        disabled={item.quantity <= 1}
+                        className="grid h-7 w-7 place-items-center rounded-full bg-[#F9F9FB] text-[#1A1A1A] disabled:opacity-40 tap-active"
+                        aria-label="Decrease"
                       >
-                        −
+                        <Minus size={14} />
                       </button>
-                      <span className="text-sm font-semibold w-5 text-center">{item.quantity}</span>
+                      <span className="min-w-[20px] text-center text-sm font-bold text-[#1A1A1A]">
+                        {item.quantity}
+                      </span>
                       <button
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="w-7 h-7 rounded-md flex items-center justify-center text-sm font-bold tap-active"
-                        style={{ backgroundColor: branding.colors.surface }}
+                        onClick={() => {
+                          hapticFeedback('impact');
+                          void updateQuantity(item.id, item.quantity + 1);
+                        }}
+                        className="grid h-7 w-7 place-items-center rounded-full bg-[#F9F9FB] text-[#1A1A1A] tap-active"
+                        aria-label="Increase"
                       >
-                        +
+                        <Plus size={14} />
                       </button>
                     </div>
+
+                    <span className="text-sm font-bold text-[#1A1A1A]">
+                      {formatPrice(item.product.price * item.quantity)}
+                    </span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </>
-      )}
+              </li>
+            ))}
+          </ul>
+        )}
 
-      {/* Fixed Checkout Bar */}
+        {items.length > 0 && (
+          <section className="mt-6 rounded-3xl bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)] border border-[#EBEBEB]">
+            <div className="flex items-center justify-between text-sm text-[#6B7280]">
+              <span>Subtotal</span>
+              <span className="text-[#1A1A1A]">{formatPrice(subtotal)}</span>
+            </div>
+            <div className="mt-2 flex items-center justify-between text-sm text-[#6B7280]">
+              <span>Shipping</span>
+              <span className="text-[#1A1A1A]">Calculated at checkout</span>
+            </div>
+            <div className="my-3 h-px bg-[#EEEEEE]" />
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-[#1A1A1A]">Total</span>
+              <span className="text-lg font-bold text-[#1A1A1A]">
+                {formatPrice(total)}
+              </span>
+            </div>
+          </section>
+        )}
+      </main>
+
+      {/* Sticky checkout */}
       {items.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 z-50"
-          style={{ borderColor: branding.colors.border }}>
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-sm" style={{ color: branding.colors.textSecondary }}>Subtotal</span>
-            <span className="text-sm font-medium">{formatPrice(subtotal)}</span>
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#EEEEEE] bg-white/95 backdrop-blur-md">
+          <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
+            <div className="flex flex-col">
+              <span className="text-[11px] text-[#9CA3AF]">Total</span>
+              <span className="text-lg font-bold text-[#1A1A1A]">
+                {formatPrice(total)}
+              </span>
+            </div>
+            <button
+              onClick={handleCheckout}
+              className="ml-auto inline-flex h-12 flex-1 items-center justify-center rounded-full bg-[#FFD02B] text-sm font-bold text-[#1A1A1A] transition-colors hover:bg-[#E5BA20] tap-active"
+            >
+              Checkout
+            </button>
           </div>
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-base font-bold" style={{ color: branding.colors.text }}>Total</span>
-            <span className="text-lg font-bold" style={{ color: branding.colors.text }}>
-              {formatPrice(total)}
-            </span>
-          </div>
-          <button
-            onClick={() => navigate({ name: 'checkout' })}
-            className="w-full py-3.5 rounded-xl text-[15px] font-bold transition-all tap-active"
-            style={{
-              backgroundColor: branding.colors.primary,
-              color: branding.colors.primaryText,
-            }}
-          >
-            Checkout
-          </button>
         </div>
       )}
     </div>

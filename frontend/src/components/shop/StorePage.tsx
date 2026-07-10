@@ -1,289 +1,301 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { branding } from '@/config/branding';
+import React, { useEffect, useMemo, useState } from 'react';
+import type { Category, Product } from '@/types';
+import api from '@/lib/api';
 import { useCart } from '@/providers/CartProvider';
 import { useTelegram } from '@/providers/TelegramProvider';
-import api from '@/lib/api';
-import type { Product, Category } from '@/types';
-import type { Screen } from './ShopApp';
+import { hapticFeedback } from '@/lib/telegram';
+import { branding } from '@/config/branding';
 import ProductCard from './ProductCard';
-import ProductSkeleton from './ProductSkeleton';
+import type { Screen } from './ShopApp';
+import { ShoppingBag } from 'lucide-react';
+
+const PRICE_RANGES = [
+  { label: 'Under 100 Br', min: 0, max: 100 },
+  { label: '100 - 500 Br', min: 100, max: 500 },
+  { label: '500 - 1000 Br', min: 500, max: 1000 },
+  { label: 'Over 1000 Br', min: 1000, max: null },
+] as const;
 
 interface StorePageProps {
   navigate: (screen: Screen) => void;
 }
 
-const PRICE_FILTERS = [
-  { label: 'Under 100 Br', min: 0, max: 100 },
-  { label: '100 - 500 Br', min: 100, max: 500 },
-  { label: '500 - 1000 Br', min: 500, max: 1000 },
-  { label: 'Over 1000 Br', min: 1000, max: null },
-];
+function BekolloLogo() {
+  return (
+    <div className="flex items-center gap-0.5 text-[26px] font-extrabold leading-none tracking-tight text-[#1A1A1A]">
+      <span>Bek</span>
+      <span className="relative inline-block h-[26px] w-[26px]">
+        {/* sun rays */}
+        <svg
+          viewBox="0 0 32 32"
+          className="absolute -top-2 left-1/2 h-[14px] w-[22px] -translate-x-1/2 text-[#FFD02B]"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          {Array.from({ length: 7 }).map((_, i) => {
+            const angle = -70 + i * 23;
+            const rad = (angle * Math.PI) / 180;
+            const x1 = 16 + Math.cos(rad) * 10;
+            const y1 = 16 + Math.sin(rad) * 10;
+            const x2 = 16 + Math.cos(rad) * 15;
+            const y2 = 16 + Math.sin(rad) * 15;
+            return (
+              <line
+                key={i}
+                x1={x1}
+                y1={y1}
+                x2={x2}
+                y2={y2}
+                stroke="currentColor"
+                strokeWidth={2.5}
+                strokeLinecap="round"
+              />
+            );
+          })}
+        </svg>
+        {/* smiley face */}
+        <span className="absolute inset-0 grid place-items-center rounded-full bg-[#FFD02B]">
+          <svg viewBox="0 0 20 20" className="h-3 w-3 text-[#1A1A1A]" aria-hidden="true">
+            <circle cx="7" cy="8" r="1.2" fill="currentColor" />
+            <circle cx="13" cy="8" r="1.2" fill="currentColor" />
+            <path
+              d="M6 12 Q10 15 14 12"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+          </svg>
+        </span>
+      </span>
+      <span>llo</span>
+    </div>
+  );
+}
 
 export default function StorePage({ navigate }: StorePageProps) {
-  const { count } = useCart();
   const { user } = useTelegram();
-  const [products, setProducts] = useState<Product[]>([]);
+  const { count } = useCart();
+
   const [categories, setCategories] = useState<Category[]>([]);
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [activePriceFilter, setActivePriceFilter] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const [products, setProducts] = useState<Product[]>([]);
   const [wishlistIds, setWishlistIds] = useState<string[]>([]);
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  // Fetch categories
+  const [activeCategory, setActiveCategory] = useState<string>('all'); // 'all' | slug
+  const [activePriceIdx, setActivePriceIdx] = useState<number | null>(null);
+
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  // Load categories and wishlist IDs
   useEffect(() => {
-    api.get('/categories').then(({ data }) => {
-      setCategories(data.categories || []);
-    }).catch(() => {});
+    api.get('/categories')
+      .then((r) => setCategories(r.data?.categories ?? []))
+      .catch(() => {});
+    api.get('/users/wishlist/ids')
+      .then((r) => setWishlistIds(r.data?.productIds ?? []))
+      .catch(() => {});
   }, []);
 
-  // Fetch wishlist IDs
+  // Products (reset on filter change)
   useEffect(() => {
-    api.get('/users/wishlist/ids').then(({ data }) => {
-      setWishlistIds(data.productIds || []);
-    }).catch(() => {});
-  }, []);
+    setPage(1);
+    setProducts([]);
+    loadProducts(1, true);
+  }, [activeCategory, activePriceIdx]);
 
-  // Fetch products
-  const fetchProducts = useCallback(async (pageNum: number, reset: boolean = false) => {
+  const loadProducts = async (nextPage: number, replace = false) => {
+    if (replace) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+
     try {
-      if (reset) setLoading(true);
-      else setLoadingMore(true);
+      const price = activePriceIdx != null ? PRICE_RANGES[activePriceIdx] : null;
+      const { data } = await api.get('/products', {
+        params: {
+          page: nextPage,
+          limit: 12,
+          category: activeCategory === 'all' ? undefined : activeCategory,
+          minPrice: price?.min,
+          maxPrice: price?.max,
+        },
+      });
 
-      const params: any = { page: pageNum, limit: 20 };
-      if (activeCategory !== 'all') params.category = activeCategory;
-      if (activePriceFilter !== null) {
-        const filter = PRICE_FILTERS[activePriceFilter];
-        params.minPrice = filter.min;
-        if (filter.max) params.maxPrice = filter.max;
-      }
-
-      const { data } = await api.get('/products', { params });
-      
-      if (reset) {
-        setProducts(data.products);
-      } else {
-        setProducts(prev => [...prev, ...data.products]);
-      }
-      setHasMore(data.pagination.hasMore);
-    } catch (error) {
-      console.error('Failed to fetch products:', error);
+      setProducts((prev) =>
+        replace ? data.products ?? [] : [...prev, ...(data.products ?? [])]
+      );
+      setHasMore(Boolean(data?.pagination?.hasMore));
+      setPage(nextPage);
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [activeCategory, activePriceFilter]);
-
-  // Reset and fetch on filter change
-  useEffect(() => {
-    setPage(1);
-    fetchProducts(1, true);
-  }, [activeCategory, activePriceFilter, fetchProducts]);
-
-  // Infinite scroll observer
-  useEffect(() => {
-    if (observerRef.current) observerRef.current.disconnect();
-
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
-          const nextPage = page + 1;
-          setPage(nextPage);
-          fetchProducts(nextPage);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (loadMoreRef.current) {
-      observerRef.current.observe(loadMoreRef.current);
-    }
-
-    return () => observerRef.current?.disconnect();
-  }, [hasMore, loadingMore, loading, page, fetchProducts]);
+  };
 
   const toggleWishlist = async (productId: string) => {
     try {
       const { data } = await api.post('/users/wishlist', { productId });
       if (data.wishlisted) {
-        setWishlistIds(prev => [...prev, productId]);
+        setWishlistIds((prev) => [...prev, productId]);
       } else {
-        setWishlistIds(prev => prev.filter(id => id !== productId));
+        setWishlistIds((prev) => prev.filter((id) => id !== productId));
       }
     } catch {
       // silent fail
     }
   };
 
+  const categoryPills = useMemo(
+    () => [{ id: 'all', name: 'All', slug: 'all', sortOrder: 0 }, ...categories],
+    [categories]
+  );
+
   return (
     <div className="min-h-screen bg-[#F9F9FB]">
-      {/* Sticky Header */}
-      <header className="sticky top-0 z-50 bg-white border-b px-4 py-3"
-        style={{ borderColor: '#EBEBEB' }}>
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <h1 className="text-2xl font-bold flex items-center" style={{ color: branding.colors.text }}>
-            {branding.storeName.split('').map((char, i) => {
-              if (char.toLowerCase() === 'o' && i === 3) {
-                return (
-                  <span key={i} className="inline-flex items-center mx-0.5 align-middle select-none">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="-mt-1">
-                      {/* Rays */}
-                      <path d="M12 5V2.5" stroke="#FFD02B" strokeWidth="2.2" strokeLinecap="round" />
-                      <path d="M7.76 9.76L5.64 7.64" stroke="#FFD02B" strokeWidth="2.2" strokeLinecap="round" />
-                      <path d="M16.24 9.76L18.36 7.64" stroke="#FFD02B" strokeWidth="2.2" strokeLinecap="round" />
-                      <path d="M6 14H3" stroke="#FFD02B" strokeWidth="2.2" strokeLinecap="round" />
-                      <path d="M18 14H21" stroke="#FFD02B" strokeWidth="2.2" strokeLinecap="round" />
-                      {/* Sun Face */}
-                      <circle cx="12" cy="14" r="5.5" fill="#FFD02B" />
-                      {/* Eyes */}
-                      <circle cx="9.8" cy="13.2" r="0.75" fill="#1A1A1A" />
-                      <circle cx="14.2" cy="13.2" r="0.75" fill="#1A1A1A" />
-                      {/* Smile */}
-                      <path d="M9.5 15.5C10.2 16.8 13.8 16.8 14.5 15.5" stroke="#1A1A1A" strokeWidth="1.2" strokeLinecap="round" fill="none" />
-                    </svg>
-                  </span>
-                );
-              }
-              return (
-                <span key={i}>
-                  {char}
-                </span>
-              );
-            })}
-          </h1>
+      {/* Sticky header */}
+      <header className="sticky top-0 z-30 bg-[#F9F9FB]/90 backdrop-blur-md border-b border-[#EBEBEB]">
+        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
+          <BekolloLogo />
 
-          {/* Right side */}
-          <div className="flex items-center gap-3">
-            {/* Cart button */}
+          <div className="flex items-center gap-2.5">
             <button
-              onClick={() => navigate({ name: 'cart' })}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold bg-[#0C0C0C] text-white tap-active transition-all"
+              onClick={() => {
+                hapticFeedback('impact');
+                navigate({ name: 'cart' });
+              }}
+              className="inline-flex h-10 items-center gap-2 rounded-full bg-[#1A1A1A] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#333] tap-active"
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <path d="M16 10a4 4 0 01-8 0" />
-              </svg>
-              {branding.cartButton.text}
+              <ShoppingBag size={15} strokeWidth={2.2} />
+              <span>{branding.cartButton.text}</span>
               {count > 0 && (
-                <span className="bg-white text-black text-[11px] w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FFD02B] px-1.5 text-[11px] font-bold text-[#1A1A1A]">
                   {count}
                 </span>
               )}
             </button>
 
-            {/* User avatar */}
             <button
-              onClick={() => navigate({ name: 'account' })}
-              className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border border-gray-100 tap-active shadow-sm"
+              onClick={() => {
+                hapticFeedback('impact');
+                navigate({ name: 'account' });
+              }}
+              className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-[#1A1A1A] text-white ring-2 ring-white hover:brightness-95 tap-active"
             >
               {user?.photo_url ? (
-                <img src={user.photo_url} alt="" className="w-full h-full object-cover" />
+                <img
+                  src={user.photo_url}
+                  alt={user.first_name}
+                  className="h-full w-full object-cover"
+                />
               ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
+                <span className="text-sm font-semibold">
+                  {user?.first_name?.[0]?.toUpperCase() ?? 'B'}
+                </span>
               )}
             </button>
+          </div>
+        </div>
+
+        {/* Category pills */}
+        <div className="mx-auto max-w-2xl overflow-x-auto px-4 pb-2.5 [&::-webkit-scrollbar]:hidden">
+          <div className="flex items-center gap-2">
+            {categoryPills.map((c) => {
+              const active = activeCategory === c.slug;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => {
+                    hapticFeedback('selection');
+                    setActiveCategory(c.slug);
+                  }}
+                  className={
+                    'shrink-0 rounded-full px-5 py-2 text-sm font-semibold transition-colors tap-active ' +
+                    (active
+                      ? 'bg-[#1A1A1A] text-white'
+                      : 'border border-[#EEEEEE] bg-white text-[#1A1A1A] hover:border-[#1A1A1A]/20')
+                  }
+                >
+                  {c.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Price pills */}
+        <div className="mx-auto max-w-2xl overflow-x-auto px-4 pb-3.5 [&::-webkit-scrollbar]:hidden">
+          <div className="flex items-center gap-2">
+            {PRICE_RANGES.map((r, i) => {
+              const active = activePriceIdx === i;
+              return (
+                <button
+                  key={r.label}
+                  onClick={() => {
+                    hapticFeedback('selection');
+                    setActivePriceIdx(active ? null : i);
+                  }}
+                  className={
+                    'shrink-0 rounded-full px-4 py-2 text-[13px] font-medium transition-colors tap-active ' +
+                    (active
+                      ? 'bg-[#1A1A1A] text-white'
+                      : 'border border-[#EEEEEE] bg-white text-[#6B7280] hover:border-[#1A1A1A]/20')
+                  }
+                >
+                  {r.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </header>
 
-      {/* Category Tabs + Price Filters */}
-      <div className="sticky top-[57px] z-40 bg-white px-4 pt-3 pb-2.5"
-        style={{ borderBottom: '1px solid #EBEBEB' }}>
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-          <button
-            onClick={() => setActiveCategory('all')}
-            className="px-5 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-all tap-active flex-shrink-0"
-            style={{
-              backgroundColor: activeCategory === 'all' ? '#1A1A1A' : 'transparent',
-              color: activeCategory === 'all' ? '#FFFFFF' : '#1A1A1A',
-              border: `1.5px solid ${activeCategory === 'all' ? '#1A1A1A' : '#D1D5DB'}`,
-            }}
-          >
-            All
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.slug)}
-              className="px-5 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-all tap-active flex-shrink-0"
-              style={{
-                backgroundColor: activeCategory === cat.slug ? '#1A1A1A' : 'transparent',
-                color: activeCategory === cat.slug ? '#FFFFFF' : '#1A1A1A',
-                border: `1.5px solid ${activeCategory === cat.slug ? '#1A1A1A' : '#D1D5DB'}`,
-              }}
-            >
-              {cat.name}
-            </button>
-          ))}
-        </div>
-
-        {/* Price Filters */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar">
-          {PRICE_FILTERS.map((filter, index) => (
-            <button
-              key={index}
-              onClick={() => setActivePriceFilter(activePriceFilter === index ? null : index)}
-              className="px-3.5 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap transition-all tap-active flex-shrink-0"
-              style={{
-                backgroundColor: activePriceFilter === index ? '#F3F4F6' : 'transparent',
-                color: activePriceFilter === index ? '#1A1A1A' : '#6B7280',
-                border: `1px solid ${activePriceFilter === index ? '#D1D5DB' : '#E5E7EB'}`,
-              }}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Product Grid */}
-      <div className="px-4 pt-4 pb-8">
-        {loading ? (
-          <div className="grid grid-cols-2 gap-3.5">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <ProductSkeleton key={i} />
-            ))}
+      {/* Grid */}
+      <main className="mx-auto max-w-2xl px-4 pb-24 pt-4">
+        {loading && products.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="text-sm text-[#9CA3AF]">Loading...</p>
           </div>
         ) : products.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-lg mb-1" style={{ color: branding.colors.textSecondary }}>No products found</p>
-            <p className="text-sm" style={{ color: branding.colors.textMuted }}>Try a different category or filter</p>
-          </div>
+          <p className="py-16 text-center text-sm text-[#9CA3AF]">
+            No products found.
+          </p>
         ) : (
           <>
             <div className="grid grid-cols-2 gap-3.5">
-              {products.map((product, index) => (
-                <div key={product.id} className="animate-fade-in-up" style={{ animationDelay: `${(index % 6) * 50}ms` }}>
-                  <ProductCard
-                    product={product}
-                    isWishlisted={wishlistIds.includes(product.id)}
-                    onSelect={() => navigate({ name: 'product', slug: product.slug })}
-                    onToggleWishlist={() => toggleWishlist(product.id)}
-                  />
-                </div>
+              {products.map((p) => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  isWishlisted={wishlistIds.includes(p.id)}
+                  onSelect={() => navigate({ name: 'product', slug: p.slug })}
+                  onToggleWishlist={() => toggleWishlist(p.id)}
+                />
               ))}
             </div>
 
-            {/* Load more trigger */}
-            <div ref={loadMoreRef} className="py-6 text-center">
-              {loadingMore && (
-                <p className="text-sm" style={{ color: branding.colors.textMuted }}>Loading...</p>
-              )}
-            </div>
+            {loadingMore && (
+              <p className="py-8 text-center text-sm text-[#9CA3AF]">Loading...</p>
+            )}
+
+            {!loadingMore && hasMore && (
+              <button
+                onClick={() => loadProducts(page + 1)}
+                className="mx-auto mt-8 block rounded-full border border-[#EEEEEE] bg-white px-6 py-2.5 text-sm font-semibold text-[#1A1A1A] hover:border-[#1A1A1A]/20 transition-colors tap-active"
+              >
+                Load more
+              </button>
+            )}
           </>
         )}
-      </div>
+      </main>
     </div>
   );
 }
