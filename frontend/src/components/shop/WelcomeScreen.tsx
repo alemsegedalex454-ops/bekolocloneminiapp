@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ShieldCheck } from 'lucide-react';
 import { useTelegram } from '@/providers/TelegramProvider';
 import { hapticFeedback } from '@/lib/telegram';
 import api from '@/lib/api';
@@ -58,7 +57,7 @@ interface WelcomeScreenProps {
 }
 
 export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
-  const { user, isReady } = useTelegram();
+  const { user } = useTelegram();
 
   const displayName = user?.first_name || 'Customer';
   const username = user?.username ? `@${user.username}` : '';
@@ -80,21 +79,21 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#1a1a1a]">
-      {/* Faded backdrop logo */}
-      <div className="pointer-events-none absolute inset-x-0 top-[18%] flex justify-center opacity-30">
-        <div className="scale-[2.2] grayscale">
+    <div className="relative min-h-screen w-full overflow-hidden bg-white">
+      {/* Faded backdrop watermark logo */}
+      <div className="pointer-events-none absolute inset-x-0 top-[22%] flex justify-center opacity-[0.06] select-none">
+        <div className="scale-[2.4]">
           <SummitetLogo size={40} />
         </div>
       </div>
 
       {/* Bottom sheet */}
-      <div className="absolute inset-x-0 bottom-0 rounded-t-[28px] bg-[#F9F9FB] px-6 pb-8 pt-3 shadow-[0_-8px_40px_rgba(0,0,0,0.25)]">
+      <div className="fixed inset-x-0 bottom-0 rounded-t-[28px] bg-[#F9F9FB] px-6 pb-8 pt-3 shadow-[0_-8px_40px_rgba(0,0,0,0.06)] border-t border-neutral-100 animate-slide-up z-20">
         {/* Drag handle */}
         <div className="mx-auto mb-6 h-1 w-12 rounded-full bg-neutral-300" />
 
         {/* Logo */}
-        <div className="mb-5 flex justify-center">
+        <div className="mb-6 flex justify-center">
           <SummitetLogo size={30} />
         </div>
 
@@ -102,12 +101,14 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
         <h1 className="text-center text-[22px] font-bold text-black flex items-center justify-center gap-1">
           Welcome, {displayName} <span className="text-[22px]">🌞</span>
         </h1>
-        <p className="mx-auto mt-5 max-w-[300px] text-center text-[14px] leading-relaxed text-neutral-500">
+        
+        {/* Subtitle */}
+        <p className="mx-auto mt-4 max-w-[300px] text-center text-[14px] leading-relaxed text-neutral-500">
           Continue with your Telegram account to shop, save items, and track your orders.
         </p>
 
         {/* User card */}
-        <div className="mt-10 flex items-center gap-3 rounded-2xl bg-white p-3 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-[#EBEBEB]">
+        <div className="mt-8 flex items-center gap-3 rounded-2xl bg-white p-3 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-[#EBEBEB]">
           {user?.photo_url ? (
             <img
               src={user.photo_url}
@@ -136,16 +137,17 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
           </div>
         </div>
 
-        {/* CTA */}
+        {/* CTA Button */}
         <button
           onClick={handleContinue}
           disabled={loading}
-          className="mt-10 flex h-[54px] w-full items-center justify-center rounded-full bg-[#FFD02B] text-[15px] font-extrabold uppercase tracking-wider text-black transition active:scale-[0.98] tap-active disabled:opacity-60"
+          className="mt-8 flex h-[54px] w-full items-center justify-center rounded-full bg-[#FFD02B] text-[15px] font-extrabold uppercase tracking-wider text-black transition active:scale-[0.98] tap-active disabled:opacity-60"
         >
           {loading ? 'Connecting…' : 'Continue with Telegram'}
         </button>
 
-        <p className="mx-auto mt-8 max-w-[300px] text-center text-[12px] leading-relaxed text-neutral-400">
+        {/* Bottom Disclaimer */}
+        <p className="mx-auto mt-6 max-w-[300px] text-center text-[12px] leading-relaxed text-neutral-400">
           We only use your Telegram name and photo to personalize your experience.
         </p>
       </div>
