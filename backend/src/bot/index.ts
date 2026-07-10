@@ -6,11 +6,10 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 const WEBAPP_URL = process.env.WEBAPP_URL || 'https://your-domain.com';
 
 if (!BOT_TOKEN) {
-  console.warn('⚠️  BOT_TOKEN not set. Telegram bot will not start.');
-  process.exit(0);
+  console.warn('⚠️  BOT_TOKEN not set. Telegram bot features will be disabled.');
 }
 
-const bot = new Telegraf(BOT_TOKEN);
+const bot = new Telegraf(BOT_TOKEN || 'placeholder-token');
 
 // Action handlers for order receipts approval/rejection
 bot.action(/^approve_order:(.+)$/, async (ctx) => {
@@ -118,13 +117,15 @@ bot.catch((err: any) => {
 });
 
 // Launch
-bot
-  .launch()
-  .then(() => console.log('🤖 Bot started'))
-  .catch((err) => console.error('Failed to start bot:', err));
+if (BOT_TOKEN && BOT_TOKEN !== 'placeholder-token') {
+  bot
+    .launch()
+    .then(() => console.log('🤖 Bot started'))
+    .catch((err) => console.error('Failed to start bot:', err));
 
-// Graceful stop
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+  // Graceful stop
+  process.once('SIGINT', () => bot.stop('SIGINT'));
+  process.once('SIGTERM', () => bot.stop('SIGTERM'));
+}
 
 export default bot;
