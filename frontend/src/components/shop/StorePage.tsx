@@ -103,15 +103,15 @@ export default function StorePage({ navigate }: StorePageProps) {
     <div className="min-h-screen bg-[#F9F9FB]">
       {/* Sticky header */}
       <header className="sticky top-0 z-30 bg-[#F9F9FB]/95 backdrop-blur px-4 pt-4 pb-3 border-b border-[#EBEBEB]">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <SummitetLogo align="left" size={20} />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={() => {
                 hapticFeedback('impact');
                 navigate({ name: 'cart' });
               }}
-              className="flex h-11 items-center gap-2 rounded-full bg-black px-4 text-white hover:bg-neutral-800 transition-colors tap-active"
+              className="flex h-11 items-center gap-2 rounded-full bg-black px-4 text-white hover:bg-neutral-800 transition-colors tap-active shrink-0"
             >
               <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={2} />
               <span className="text-[15px] font-semibold">{branding.cartButton.text}</span>
@@ -126,7 +126,7 @@ export default function StorePage({ navigate }: StorePageProps) {
                 hapticFeedback('impact');
                 navigate({ name: 'account' });
               }}
-              className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-black text-white ring-2 ring-white hover:brightness-95 tap-active"
+              className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-black text-white ring-2 ring-white hover:brightness-95 tap-active shrink-0"
             >
               {user?.photo_url ? (
                 <img
@@ -144,7 +144,7 @@ export default function StorePage({ navigate }: StorePageProps) {
         </div>
 
         {/* Category pills */}
-        <div className="mt-4 flex gap-2 overflow-x-auto no-scrollbar">
+        <div className="mt-5 flex gap-4 overflow-x-auto no-scrollbar pb-1">
           <CategoryPill active={activeCat === 'all'} onClick={() => setActiveCat('all')}>All</CategoryPill>
           {categories.map((c) => (
             <CategoryPill key={c.id} active={activeCat === c.slug} onClick={() => setActiveCat(c.slug)}>
@@ -154,7 +154,7 @@ export default function StorePage({ navigate }: StorePageProps) {
         </div>
 
         {/* Price pills */}
-        <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar">
+        <div className="mt-4 flex gap-3 overflow-x-auto no-scrollbar pb-1">
           {PRICE_RANGES.map((r, i) => (
             <button
               key={r.label}
@@ -164,7 +164,7 @@ export default function StorePage({ navigate }: StorePageProps) {
               }}
               className={`h-9 shrink-0 rounded-full border px-4 text-[13px] transition tap-active ${
                 priceIdx === i
-                  ? 'border-black bg-black text-white'
+                  ? 'border-black bg-black text-white font-medium'
                   : 'border-neutral-200 bg-white text-neutral-500'
               }`}
             >
@@ -204,7 +204,7 @@ function CategoryPill({
         hapticFeedback('selection');
         onClick();
       }}
-      className={`h-11 shrink-0 rounded-full px-6 text-[16px] font-semibold transition tap-active ${
+      className={`h-11 shrink-0 rounded-full px-5 text-[15px] font-bold transition tap-active flex items-center justify-center min-w-[72px] ${
         active ? 'bg-black text-white' : 'bg-transparent text-neutral-500'
       }`}
     >
