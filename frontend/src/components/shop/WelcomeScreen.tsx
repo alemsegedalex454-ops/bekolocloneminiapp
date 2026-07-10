@@ -39,8 +39,8 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
       <div className="absolute top-[25%] right-[-15%] w-[300px] h-[300px] rounded-full bg-white/5 blur-[100px] pointer-events-none animate-pulse duration-[10000ms]" />
 
       {/* Main backdrop watermark logo - clearly visible on dark background */}
-      <div className="pointer-events-none absolute inset-x-0 top-[18%] flex flex-col items-center justify-center opacity-[0.25] select-none scale-[1.3] sm:scale-[1.6] duration-700">
-        <SummitetLogo light={true} size={42} />
+      <div className="pointer-events-none absolute inset-x-0 top-[18%] flex flex-col items-center justify-center opacity-[0.35] select-none scale-[1.3] sm:scale-[1.6] duration-700">
+        <SummitetLogo yellow={true} size={42} />
       </div>
 
       {/* Pop-up bottom sheet with smooth slide-up animation */}
@@ -56,7 +56,7 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
 
         {/* Greeting */}
         <h1 className="text-center text-[22px] font-bold text-black flex items-center justify-center gap-1">
-          Welcome, {displayName} <span className="text-[22px]">🌞</span>
+          Welcome, <span className="text-[#235D65]">{displayName}</span> <span className="text-[22px]">🌞</span>
         </h1>
         
         {/* Subtitle */}
