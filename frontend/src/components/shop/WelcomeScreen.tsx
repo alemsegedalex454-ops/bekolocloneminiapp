@@ -39,7 +39,7 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
       <div className="absolute top-[25%] right-[-15%] w-[300px] h-[300px] rounded-full bg-white/5 blur-[100px] pointer-events-none animate-pulse duration-[10000ms]" />
 
       {/* Main backdrop watermark logo - elegant white text on dark backdrop */}
-      <div className="pointer-events-none absolute inset-x-0 top-[18%] flex flex-col items-center justify-center opacity-[0.25] select-none scale-[1.3] sm:scale-[1.6] duration-700">
+      <div className="pointer-events-none absolute inset-x-0 top-[18%] flex flex-col items-center justify-center select-none scale-[1.3] sm:scale-[1.6] duration-700 animate-logo-watermark">
         <SummitetLogo light={true} size={42} />
       </div>
 
