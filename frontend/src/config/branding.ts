@@ -27,8 +27,8 @@ export const branding = {
 
   // Colors
   colors: {
-    primary: '#F5A623',        // Yellow/gold — CTA buttons
-    primaryHover: '#E09510',
+    primary: '#FFD02B',        // Bright yellow — CTA buttons
+    primaryHover: '#E5BA20',
     primaryText: '#1A1A1A',    // Text on primary buttons
     secondary: '#1A1A1A',      // Dark elements
     secondaryHover: '#333333',

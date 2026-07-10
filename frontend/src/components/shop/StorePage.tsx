@@ -122,18 +122,41 @@ export default function StorePage({ navigate }: StorePageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#F9F9FB]">
       {/* Sticky Header */}
       <header className="sticky top-0 z-50 bg-white border-b px-4 py-3"
-        style={{ borderColor: branding.colors.border }}>
+        style={{ borderColor: '#EBEBEB' }}>
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <h1 className="text-2xl font-bold" style={{ color: branding.colors.text }}>
-            {branding.storeName.split('').map((char, i) => (
-              <span key={i} style={char.toLowerCase() === 'o' && i === 3 ? { color: branding.colors.primary } : {}}>
-                {char}
-              </span>
-            ))}
+          <h1 className="text-2xl font-bold flex items-center" style={{ color: branding.colors.text }}>
+            {branding.storeName.split('').map((char, i) => {
+              if (char.toLowerCase() === 'o' && i === 3) {
+                return (
+                  <span key={i} className="inline-flex items-center mx-0.5 align-middle select-none">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="-mt-1">
+                      {/* Rays */}
+                      <path d="M12 5V2.5" stroke="#FFD02B" strokeWidth="2.2" strokeLinecap="round" />
+                      <path d="M7.76 9.76L5.64 7.64" stroke="#FFD02B" strokeWidth="2.2" strokeLinecap="round" />
+                      <path d="M16.24 9.76L18.36 7.64" stroke="#FFD02B" strokeWidth="2.2" strokeLinecap="round" />
+                      <path d="M6 14H3" stroke="#FFD02B" strokeWidth="2.2" strokeLinecap="round" />
+                      <path d="M18 14H21" stroke="#FFD02B" strokeWidth="2.2" strokeLinecap="round" />
+                      {/* Sun Face */}
+                      <circle cx="12" cy="14" r="5.5" fill="#FFD02B" />
+                      {/* Eyes */}
+                      <circle cx="9.8" cy="13.2" r="0.75" fill="#1A1A1A" />
+                      <circle cx="14.2" cy="13.2" r="0.75" fill="#1A1A1A" />
+                      {/* Smile */}
+                      <path d="M9.5 15.5C10.2 16.8 13.8 16.8 14.5 15.5" stroke="#1A1A1A" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+                    </svg>
+                  </span>
+                );
+              }
+              return (
+                <span key={i}>
+                  {char}
+                </span>
+              );
+            })}
           </h1>
 
           {/* Right side */}
@@ -141,21 +164,16 @@ export default function StorePage({ navigate }: StorePageProps) {
             {/* Cart button */}
             <button
               onClick={() => navigate({ name: 'cart' })}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold tap-active transition-all"
-              style={{
-                backgroundColor: branding.colors.primary,
-                color: branding.colors.primaryText,
-              }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold bg-[#0C0C0C] text-white tap-active transition-all"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <path d="M16 10a4 4 0 01-8 0" />
               </svg>
               {branding.cartButton.text}
               {count > 0 && (
-                <span className="bg-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold"
-                  style={{ color: branding.colors.primary }}>
+                <span className="bg-white text-black text-[11px] w-5 h-5 rounded-full flex items-center justify-center font-bold">
                   {count}
                 </span>
               )}
@@ -164,7 +182,7 @@ export default function StorePage({ navigate }: StorePageProps) {
             {/* User avatar */}
             <button
               onClick={() => navigate({ name: 'account' })}
-              className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden tap-active"
+              className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border border-gray-100 tap-active shadow-sm"
             >
               {user?.photo_url ? (
                 <img src={user.photo_url} alt="" className="w-full h-full object-cover" />
@@ -179,17 +197,17 @@ export default function StorePage({ navigate }: StorePageProps) {
         </div>
       </header>
 
-      {/* Category Tabs */}
-      <div className="sticky top-[61px] z-40 bg-white border-b px-4 py-3"
-        style={{ borderColor: branding.colors.border }}>
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+      {/* Category Tabs + Price Filters */}
+      <div className="sticky top-[57px] z-40 bg-white px-4 pt-3 pb-2.5"
+        style={{ borderBottom: '1px solid #EBEBEB' }}>
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
           <button
             onClick={() => setActiveCategory('all')}
-            className="px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all tap-active flex-shrink-0"
+            className="px-5 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-all tap-active flex-shrink-0"
             style={{
-              backgroundColor: activeCategory === 'all' ? branding.colors.secondary : 'transparent',
-              color: activeCategory === 'all' ? '#FFFFFF' : branding.colors.text,
-              border: `1.5px solid ${activeCategory === 'all' ? branding.colors.secondary : branding.colors.borderDark}`,
+              backgroundColor: activeCategory === 'all' ? '#1A1A1A' : 'transparent',
+              color: activeCategory === 'all' ? '#FFFFFF' : '#1A1A1A',
+              border: `1.5px solid ${activeCategory === 'all' ? '#1A1A1A' : '#D1D5DB'}`,
             }}
           >
             All
@@ -198,11 +216,11 @@ export default function StorePage({ navigate }: StorePageProps) {
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.slug)}
-              className="px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all tap-active flex-shrink-0"
+              className="px-5 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-all tap-active flex-shrink-0"
               style={{
-                backgroundColor: activeCategory === cat.slug ? branding.colors.secondary : 'transparent',
-                color: activeCategory === cat.slug ? '#FFFFFF' : branding.colors.text,
-                border: `1.5px solid ${activeCategory === cat.slug ? branding.colors.secondary : branding.colors.borderDark}`,
+                backgroundColor: activeCategory === cat.slug ? '#1A1A1A' : 'transparent',
+                color: activeCategory === cat.slug ? '#FFFFFF' : '#1A1A1A',
+                border: `1.5px solid ${activeCategory === cat.slug ? '#1A1A1A' : '#D1D5DB'}`,
               }}
             >
               {cat.name}
@@ -211,16 +229,16 @@ export default function StorePage({ navigate }: StorePageProps) {
         </div>
 
         {/* Price Filters */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar mt-2">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar">
           {PRICE_FILTERS.map((filter, index) => (
             <button
               key={index}
               onClick={() => setActivePriceFilter(activePriceFilter === index ? null : index)}
-              className="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all tap-active flex-shrink-0"
+              className="px-3.5 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap transition-all tap-active flex-shrink-0"
               style={{
-                backgroundColor: activePriceFilter === index ? branding.colors.surface : 'transparent',
-                color: activePriceFilter === index ? branding.colors.text : branding.colors.textSecondary,
-                border: `1px solid ${branding.colors.border}`,
+                backgroundColor: activePriceFilter === index ? '#F3F4F6' : 'transparent',
+                color: activePriceFilter === index ? '#1A1A1A' : '#6B7280',
+                border: `1px solid ${activePriceFilter === index ? '#D1D5DB' : '#E5E7EB'}`,
               }}
             >
               {filter.label}
@@ -229,25 +247,10 @@ export default function StorePage({ navigate }: StorePageProps) {
         </div>
       </div>
 
-      {/* Search bar trigger */}
-      <div className="px-4 py-3">
-        <button
-          onClick={() => navigate({ name: 'search' })}
-          className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm transition-all"
-          style={{ backgroundColor: branding.colors.surface, color: branding.colors.textMuted }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8" />
-            <path d="M21 21l-4.35-4.35" />
-          </svg>
-          Search products...
-        </button>
-      </div>
-
       {/* Product Grid */}
-      <div className="px-4 pb-8">
+      <div className="px-4 pt-4 pb-8">
         {loading ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3.5">
             {Array.from({ length: 6 }).map((_, i) => (
               <ProductSkeleton key={i} />
             ))}
@@ -259,7 +262,7 @@ export default function StorePage({ navigate }: StorePageProps) {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3.5">
               {products.map((product, index) => (
                 <div key={product.id} className="animate-fade-in-up" style={{ animationDelay: `${(index % 6) * 50}ms` }}>
                   <ProductCard
