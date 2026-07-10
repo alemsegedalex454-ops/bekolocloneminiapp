@@ -43,29 +43,29 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
         <SummitetLogo yellow={true} size={42} />
       </div>
 
-      {/* Pop-up bottom sheet with smooth slide-up animation and exact spacing layout */}
-      <div className="absolute inset-x-0 bottom-0 rounded-t-[28px] bg-white px-6 pb-8 pt-3 shadow-[0_-8px_40px_rgba(0,0,0,0.25)] animate-slide-up z-20">
+      {/* Pop-up bottom sheet with smooth slide-up animation and flex gaps for perfect mobile spacing */}
+      <div className="fixed inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto no-scrollbar rounded-t-[30px] bg-white px-6 pb-10 pt-4 shadow-[0_-10px_45px_rgba(0,0,0,0.35)] border-t border-white/10 animate-slide-up z-20 flex flex-col gap-6">
         
         {/* Drag handle */}
-        <div className="mx-auto mb-6 h-1.5 w-10 rounded-full bg-black/15" />
+        <div className="mx-auto h-1.5 w-12 rounded-full bg-neutral-200 shrink-0" />
 
         {/* Logo inside sheet */}
-        <div className="mb-5 flex justify-center">
-          <SummitetLogo size={30} />
+        <div className="flex justify-center shrink-0">
+          <SummitetLogo size={28} />
         </div>
 
-        {/* Greeting */}
-        <h1 className="text-center text-[22px] font-bold text-black flex items-center justify-center gap-1.5">
-          Welcome, <span className="text-[#132F33] font-extrabold">{displayName}</span> <span className="text-[22px] animate-bounce">🌞</span>
-        </h1>
-        
-        {/* Subtitle */}
-        <p className="mx-auto mt-2 max-w-[300px] text-center text-[14px] leading-relaxed text-neutral-500">
-          Continue with your Telegram account to shop, save items, and track your orders.
-        </p>
+        {/* Greeting & Subtitle Container with vertical spacing */}
+        <div className="text-center flex flex-col gap-3">
+          <h1 className="text-[22px] font-bold text-black flex items-center justify-center gap-1.5">
+            Welcome, <span className="text-[#132F33] font-extrabold">{displayName}</span> <span className="text-[22px] animate-bounce">🌞</span>
+          </h1>
+          <p className="mx-auto max-w-[300px] text-[14px] leading-relaxed text-neutral-500 font-medium">
+            Continue with your Telegram account to shop, save items, and track your orders.
+          </p>
+        </div>
 
-        {/* User card wrapper */}
-        <div className="mt-6 flex items-center gap-3 rounded-2xl bg-white p-3 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-[#EBEBEB]">
+        {/* User card wrapper with flex stacking to prevent name overlap */}
+        <div className="flex items-center gap-3.5 rounded-2xl bg-[#F9F9FB] p-4 border border-[#EBEBEB] shrink-0">
           {user?.photo_url ? (
             <img
               src={user.photo_url}
@@ -77,7 +77,7 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
               {initial}
             </div>
           )}
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 flex flex-col gap-0.5">
             <p className="truncate text-[15px] font-semibold text-black leading-tight">
               {displayName}
             </p>
@@ -88,33 +88,34 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
             )}
           </div>
           {/* Emerald check verified bubble */}
-          <div className="flex h-5 w-5 items-center justify-center rounded-full border border-emerald-500 text-emerald-500 bg-emerald-50/50 shrink-0">
+          <div className="flex h-6 w-6 items-center justify-center rounded-full border border-emerald-500 text-emerald-500 bg-emerald-50/50 shrink-0">
             <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
         </div>
 
-        {/* CTA Button */}
-        <button
-          onClick={handleContinue}
-          disabled={loading}
-          className="mt-5 flex h-[54px] w-full items-center justify-center rounded-full bg-[#FFD02B] text-[15px] font-extrabold uppercase tracking-wider text-black transition active:scale-[0.98] tap-active disabled:opacity-60"
-        >
-          {loading ? (
-            <div className="flex items-center gap-2">
-              <span className="h-4 w-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-              <span>Connecting…</span>
-            </div>
-          ) : (
-            'Continue with Telegram'
-          )}
-        </button>
+        {/* CTA Button & Bottom Disclaimer container */}
+        <div className="flex flex-col gap-5 shrink-0 mt-2">
+          <button
+            onClick={handleContinue}
+            disabled={loading}
+            className="flex h-[54px] w-full items-center justify-center rounded-full bg-[#FFD02B] text-[15px] font-extrabold uppercase tracking-wider text-black transition active:scale-[0.98] tap-active disabled:opacity-60 shrink-0"
+          >
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <span className="h-4 w-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                <span>Connecting…</span>
+              </div>
+            ) : (
+              'Continue with Telegram'
+            )}
+          </button>
 
-        {/* Bottom Disclaimer */}
-        <p className="mx-auto mt-6 max-w-[300px] text-center text-[12px] leading-relaxed text-neutral-400 font-medium">
-          We only use your Telegram name and photo to personalize your experience.
-        </p>
+          <p className="mx-auto max-w-[300px] text-center text-[12px] leading-relaxed text-neutral-400 font-medium">
+            We only use your Telegram name and photo to personalize your experience.
+          </p>
+        </div>
 
       </div>
     </div>
